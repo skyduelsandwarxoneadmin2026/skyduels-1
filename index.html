@@ -3751,6 +3751,9 @@ document.getElementById('langToggle').addEventListener('click', () => {
 ensureSheetCards().then(() => {
   updateCardList();
   populateCardSelects();
+  return loadCardCache();
+}).then(() => {
+  renderPromoCardPicker();
   return loadGlobalDiscount();
 }).then(() => {
   loadStore();
