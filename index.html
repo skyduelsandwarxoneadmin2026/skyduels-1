@@ -1,0 +1,3763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SkyDuels – Aerial Card Combat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #f0f4fa 0%, #d9e2ef 100%);
+      min-height: 100vh;
+      padding: 16px;
+      color: #1a2634;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(8px);
+      border-radius: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+      padding: 20px 24px;
+      transition: all 0.2s ease;
+    }
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 {
+      font-weight: 600;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(145deg, #1a3a5c, #2b5a82);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .lang-btn {
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 30px;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.8); }
+    .admin-toggle {
+      background: #4a5f73;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 16px;
+      cursor: pointer;
+    }
+    .shop-toggle {
+      background: #2b5a82;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 6px 16px;
+      cursor: pointer;
+    }
+    #statusBadge {
+      background: rgba(0,0,0,0.05);
+      border-radius: 30px;
+      padding: 4px 14px;
+      font-size: 0.85rem;
+    }
+    .lobby-section, .game-section { display: none; }
+    .lobby-section.active, .game-section.active { display: block; }
+    .lobby-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 16px;
+    }
+    .lobby-card {
+      flex: 1 1 200px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: 0.2s;
+    }
+    .lobby-card:hover { border-color: #2b5a82; background: rgba(255,255,255,0.5); }
+    .lobby-card.active { border-color: #2b5a82; background: rgba(255,255,255,0.7); }
+    .lobby-card h3 { margin: 8px 0 4px; }
+    .lobby-actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .battlefield {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .player-zone {
+      flex: 1;
+      min-width: 200px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 24px;
+      padding: 12px;
+    }
+    .player-zone h4 {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .card-slots {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .row-block { margin-bottom: 6px; }
+    .row-label { font-size: 0.7rem; font-weight: 700; color: #2b5a82; margin: 2px 0; letter-spacing: 0.5px; text-transform: uppercase; }
+    .zone-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 6px; border-bottom: 1px solid rgba(0,0,0,0.08); padding-bottom: 4px; }
+    .you-zone { border: 2px solid rgba(43,90,130,0.3); }
+    .opponent-zone { border: 2px solid rgba(176,58,58,0.2); }
+    .card-slot.selected-slot { outline: 3px solid #d4a13e; border-color: #d4a13e !important; background: rgba(212,161,62,0.12); }
+    .card-slot {
+      background: rgba(255,255,255,0.4);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px dashed rgba(0,0,0,0.15);
+      transition: 0.15s;
+    }
+    .card-slot.has-card {
+      border: 2px solid rgba(43, 90, 130, 0.4);
+      background: rgba(255,255,255,0.6);
+    }
+    .card-slot .card-info {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      font-size: 0.9rem;
+    }
+    .card-slot .card-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .card-slot button {
+      background: rgba(43, 90, 130, 0.15);
+      border: none;
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .card-slot button:hover { background: rgba(43, 90, 130, 0.3); }
+    .card-slot .card-name { font-weight: 600; }
+    .rarity-common { border-left: 4px solid #8a9aa8; }
+    .rarity-rare { border-left: 4px solid #2e7d9e; }
+    .rarity-superrare { border-left: 4px solid #9b5fc4; }
+    .rarity-mythic { border-left: 4px solid #d4a13e; }
+    .rarity-legendary { border-left: 4px solid #e06b3d; }
+    .front-line-badge {
+      background: #d4a13e;
+      color: #1a2634;
+      font-weight: bold;
+      padding: 2px 10px;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      margin-left: 8px;
+    }
+    .hand-area {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 24px;
+    }
+    .hand-card {
+      background: white;
+      border-radius: 16px;
+      padding: 8px 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hand-card:hover { border-color: #2b5a82; transform: scale(1.02); }
+    .hand-card.selected { border-color: #2b5a82; background: #e6f0ff; }
+    .hand-card .stat { font-weight: 500; }
+    .turn-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0 8px;
+    }
+    .turn-actions button {
+      background: #2b5a82;
+      color: white;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 20px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.1s;
+      box-shadow: 0 4px 0 #1a3a5c;
+    }
+    .turn-actions button:active { transform: translateY(3px); box-shadow: 0 1px 0 #1a3a5c; }
+    .turn-actions button:disabled { opacity: 0.4; transform: translateY(2px); box-shadow: 0 2px 0 #1a3a5c; pointer-events: none; }
+    .admin-panel {
+      margin-top: 20px;
+      display: none;
+    }
+    .admin-panel.active { display: block; }
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .admin-card-form label { display: block; margin: 6px 0 2px; font-weight: 500; }
+    .admin-card-form input, .admin-card-form select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: rgba(255,255,255,0.7);
+      margin-bottom: 8px;
+    }
+    .admin-card-form button {
+      background: #2b5a82;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    .card-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+    .card-list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 8px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: 0.85rem;
+    }
+    .store-product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .product-item {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.3);
+      padding: 8px 14px;
+      border-radius: 16px;
+      align-items: center;
+    }
+    .product-item button {
+      background: #2b5a82;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 4px 12px;
+      cursor: pointer;
+    }
+    .target-select {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 16px;
+    }
+    .target-select button {
+      margin: 4px;
+      padding: 6px 14px;
+      border-radius: 30px;
+      border: 1px solid #2b5a82;
+      background: white;
+      cursor: pointer;
+    }
+    .target-select button:hover { background: #d9e2ef; }
+    .debug-panel {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(0,0,0,0.03);
+      border-radius: 16px;
+      font-size: 0.85rem;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+    .shop-panel {
+      margin-top: 20px;
+      display: none;
+    }
+    .shop-panel.active { display: block; }
+    .lineup-panel {
+      margin-top: 20px;
+      display: none;
+    }
+    .lineup-panel.active { display: block; }
+    .lineup-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .lineup-grid h4 { margin: 0 0 8px; }
+    .lineup-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 10px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 16px;
+    }
+    .lineup-chip {
+      background: #fff;
+      border: 2px solid #c9d3df;
+      border-radius: 14px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: 0.1s;
+    }
+    .lineup-chip:hover { border-color: #2b5a82; }
+    .lineup-chip.selected {
+      border-color: #2b5a82;
+      background: #e6f0ff;
+      font-weight: 600;
+    }
+    .shop-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .shop-item {
+      display: flex;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.4);
+      padding: 10px 16px;
+      border-radius: 16px;
+      align-items: center;
+    }
+    .shop-item button {
+      background: #2b5a82;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 6px 16px;
+      cursor: pointer;
+    }
+    .shop-item button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    /* Small AI-generated card artwork shown on the battlefield */
+    .card-img {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.05);
+    }
+    .market-panel { margin-top: 20px; display: none; }
+    .market-panel.active { display: block; }
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .stock-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .stock-table th, .stock-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+    /* Store list rows + per-item discount controls */
+    .product-item { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .store-item-info { flex: 1 1 200px; }
+    .store-item-discount { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; }
+    #discountPanel input[type="number"] { width: 70px; }
+    /* Pack card checkbox list (replaces native multi-select) */
+    .pack-checkbox-list {
+      max-height: 160px;
+      overflow-y: auto;
+      border: 1px solid rgba(0,0,0,0.18);
+      border-radius: 10px;
+      padding: 6px 8px;
+      background: #fff;
+    }
+    .pack-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.83rem;
+      padding: 3px 4px;
+      cursor: pointer;
+    }
+    .pack-check:hover { background: rgba(0,0,0,0.04); }
+    .pack-check input { margin: 0; }
+    @media (max-width: 640px) {
+      .battlefield { flex-direction: column; }
+      .header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="header glass">
+    <h1>✈️ SkyDuels</h1>
+    <div class="header-controls">
+      <span id="statusBadge">🔗 Connecting...</span>
+      <button class="lang-btn" id="langToggle">🌏 EN</button>
+      <button class="admin-toggle" id="adminToggle">⚙️ Admin</button>
+      <button class="shop-toggle" id="shopToggle">🛒 Shop</button>
+      <button class="shop-toggle" id="marketToggle" style="background:#7a4a8a;">🏪 Marketplace</button>
+      <button class="lineup-toggle" id="lineupToggle">🎴 Lineup</button>
+      <span id="currencyBadge" style="font-size:0.9rem; background:rgba(0,0,0,0.05); padding:4px 14px; border-radius:30px;">💰 0 SDC</span>
+      <span id="playerStatus" style="font-size:0.9rem; background:rgba(0,0,0,0.05); padding:4px 14px; border-radius:30px;">Offline</span>
+    </div>
+  </header>
+
+  <section class="lobby-section active glass" id="lobbySection">
+    <h2>🛫 Choose your battle</h2>
+    <div class="lobby-actions" id="authControls" style="flex-wrap:wrap;align-items:center;">
+      <input type="email" id="authEmail" placeholder="Email" style="padding:8px;border-radius:30px;border:1px solid #ccc;" autocomplete="email">
+      <input type="password" id="authPassword" placeholder="Password (min 6)" style="padding:8px;border-radius:30px;border:1px solid #ccc;" autocomplete="current-password">
+      <button id="registerBtn" style="background:#2b5a82;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">📝 Register</button>
+      <button id="loginBtn" style="background:#4a6a8a;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">🔑 Login</button>
+    </div>
+    <button id="logoutBtn" style="display:none;background:#8a4a4a;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;margin-bottom:10px;">🚪 Logout</button>
+    <div class="lobby-grid">
+      <div class="lobby-card active" data-mode="5v5"><h3>5v5</h3><p>Standard duel</p></div>
+      <div class="lobby-card" data-mode="7v7"><h3>7v7</h3><p>Extended clash</p></div>
+      <div class="lobby-card" data-mode="chaos"><h3>🌀 Chaos Dungeon</h3><p>4+ players, free‑for‑all</p></div>
+    </div>
+    <div class="lobby-actions">
+      <button id="playBtn" class="turn-actions" style="background:#2b5a82; font-size:1.2rem;">⚔️ Play!</button>
+      <button id="createRoomBtn" class="turn-actions" style="background:#4a6a8a;">Create Room</button>
+      <input type="text" id="joinRoomInput" placeholder="Enter room code" style="padding:8px;border-radius:30px;border:1px solid #ccc;">
+      <button id="joinRoomBtn" style="background:#4a6a8a;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">Join</button>
+      <button id="checkFirebaseBtn" style="background:#6a8a4a;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">🔍 Check Firebase</button>
+    </div>
+    <div class="lobby-actions">
+      <input type="text" id="giftCodeInput" placeholder="Gift code" style="padding:8px;border-radius:30px;border:1px solid #ccc;">
+      <button id="redeemGiftBtn" style="background:#d4a13e;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">🎁 Redeem</button>
+      <button id="resetProgressBtn" style="background:#8a4a4a;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">🧹 Reset Progress</button>
+    </div>
+    <div class="lobby-actions">
+      <input type="text" id="promoCodeInput" placeholder="Promo code" style="padding:8px;border-radius:30px;border:1px solid #ccc;">
+      <button id="redeemPromoBtn" style="background:#3e8ad4;color:white;border:none;border-radius:30px;padding:8px 16px;cursor:pointer;">🎟️ Use Promo</button>
+    </div>
+    <div class="debug-panel" id="debugPanel">💬 Debug: Waiting for actions...</div>
+  </section>
+
+  <section class="game-section glass" id="gameSection">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px;">
+      <span id="gameModeDisplay">Mode: —</span>
+      <span id="turnIndicator">Waiting for turn...</span>
+      <button id="leaveGameBtn" style="background:#b03a3a;color:white;border:none;border-radius:30px;padding:4px 16px;cursor:pointer;">Leave</button>
+      <button id="restartMatchBtn" style="background:#2b5a82;color:white;border:none;border-radius:30px;padding:4px 16px;cursor:pointer;">🔄 Restart</button>
+    </div>
+    <div class="battlefield" id="battlefield"></div>
+    <div class="turn-actions" id="turnActions">
+      <button id="playCardBtn">🃏 Deploy</button>
+      <button id="attackBtn">⚔️ Attack</button>
+      <button id="useSkillBtn">✨ Use Skill</button>
+      <button id="endTurnBtn">⏭️ End Turn</button>
+    </div>
+    <div class="hand-area" id="handArea"></div>
+    <div id="targetSelector" class="target-select" style="display:none;"></div>
+  </section>
+
+  <!-- Shop Panel (accessible from the menu and during a match) -->
+  <section class="shop-panel glass" id="shopPanel">
+    <h3>🛒 Shop <span id="shopCurrencyBadge" style="font-size:0.85rem;background:rgba(0,0,0,0.05);padding:2px 12px;border-radius:20px;"></span></h3>
+    <div class="shop-grid" id="shopGrid">
+      <p>Loading products...</p>
+    </div>
+  </section>
+
+  <!-- SkyDuels Marketplace: player-to-player selling + SkyStock value board -->
+  <section class="market-panel glass" id="marketPanel">
+    <h3>🏪 SkyDuels Marketplace — Sell and Trade! <span id="marketCurrencyBadge" style="font-size:0.85rem;background:rgba(0,0,0,0.05);padding:2px 12px;border-radius:20px;"></span></h3>
+    <p style="font-size:0.85rem;color:#555;margin:4px 0 12px;">
+      Sell your own cards to other players for <b>70%</b> of the original price. Buying a listing pays the seller directly.
+    </p>
+    <div class="market-grid">
+      <div>
+        <h4>📤 Sell Your Cards</h4>
+        <div class="store-product-list" id="marketSellList"><span style="color:#888;">Loading…</span></div>
+      </div>
+      <div>
+        <h4>🛍️ Listings from Players</h4>
+        <div class="store-product-list" id="marketListings"><span style="color:#888;">Loading…</span></div>
+      </div>
+    </div>
+    <div id="skyStockSection" style="margin-top:18px;border-top:1px solid rgba(0,0,0,0.1);padding-top:12px;">
+      <h4>📈 SkyStock — Card Resale Values</h4>
+      <p style="font-size:0.8rem;color:#555;margin-bottom:8px;">
+        What each of your cards is worth when re-selling (70% of original price).
+      </p>
+      <table class="stock-table" id="skyStockTable"></table>
+    </div>
+  </section>
+
+  <!-- Lineup Panel: players pick & save their starting backup/action lineup -->
+  <section class="lineup-panel glass" id="lineupPanel">
+    <h3>🎴 My Lineup <span id="lineupCurrencyBadge" style="font-size:0.85rem;background:rgba(0,0,0,0.05);padding:2px 12px;border-radius:20px;"></span></h3>
+    <p style="font-size:0.85rem;color:#555;margin:4px 0 12px;">
+      Pick which of your owned cards start each match. The saved lineup is used at the start of every battle
+      (top <b id="lineupActionCapNote">5</b> action + all backup per mode). Buy more cards in the Shop first.
+    </p>
+    <div class="lineup-grid">
+      <div>
+        <h4>⑥ Action Lineup (<span id="actionCount">0</span>/<span id="actionCap">7</span>)</h4>
+        <div class="lineup-list" id="actionLineupList"></div>
+      </div>
+      <div>
+        <h4>⑤ Backup Lineup (<span id="backupCount">0</span>/<span id="backupCap">10</span>)</h4>
+        <div class="lineup-list" id="backupLineupList"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <button id="saveLineupBtn">💾 Save Lineup</button>
+      <span id="lineupStatus" style="margin-left:10px;color:#2b7a2b;font-weight:600;"></span>
+    </div>
+  </section>
+
+  <div class="admin-panel glass" id="adminPanel">
+    <h3>🛠️ Admin Console</h3>
+    <div class="admin-grid">
+      <div class="admin-card-form">
+        <h4>Create Card</h4>
+        <label>Name</label><input type="text" id="cardName" value="F-22 Raptor">
+        <label>HP (20-1500)</label><input type="number" id="cardHp" value="450" min="20" max="1500">
+        <label>DMG (20-1500)</label><input type="number" id="cardDmg" value="280" min="20" max="1500">
+        <label>Skill (1-27)</label><select id="cardSkill"></select>
+        <label>Rarity</label>
+        <select id="cardRarity">
+          <option>Common</option><option>Rare</option><option>Super Rare</option><option>Mythic</option><option>Legendary</option>
+        </select>
+        <label>Type</label>
+        <select id="cardType">
+          <option value="plane">Plane</option>
+          <option value="action">Action</option>
+        </select>
+        <button id="createCardBtn">➕ Create Card</button>
+        <div style="margin-top:12px;">
+          <label>Card List (ID | Name)</label>
+          <div class="card-list" id="cardList">
+            <span style="color:#888;">No cards yet.</span>
+          </div>
+        </div>
+      </div>
+      <div class="admin-card-form">
+        <h4>Manage Store Products</h4>
+        <label>Type</label>
+        <select id="productType">
+          <option value="card">Single Card</option>
+          <option value="pack">Card Pack</option>
+          <option value="blindbox">Blind Box Pack</option>
+        </select>
+        <div id="productCardIdGroup">
+          <label id="productCardIdLabel">Card</label>
+          <select id="productCardId"></select>
+        </div>
+        <div id="productPackGroup" style="display:none;">
+          <label>Pack Cards (tick one or more)</label>
+          <div id="productPackIds" class="pack-checkbox-list"></div>
+          <p id="productPackCount" style="font-size:0.72rem;color:#2b7a2b;margin:4px 0 0;"></p>
+        </div>
+        <label>Quantity (how many can be sold)</label>
+        <input type="number" id="productQuantity" value="1" min="1">
+        <label>Price (currency)</label>
+        <input type="number" id="productPrice" value="500">
+        <button id="createProductBtn">💰 Add to Store</button>
+        <div id="discountPanel" style="margin-top:14px;border-top:1px solid rgba(0,0,0,0.12);padding-top:10px;">
+          <h4>🏷️ Discounts</h4>
+          <p style="font-size:0.76rem;color:#555;margin:0 0 8px;">
+            Tick the items you want to discount below, then set a % and click
+            <b>Apply to Selected</b>. Discounts are per-item — they do <b>not</b> have to apply to every product.
+          </p>
+          <label>Discount % for selected items</label>
+          <input type="number" id="discountPct" value="10" min="0" max="100">
+          <button id="applySelectedDiscountBtn">Apply to Selected</button>
+          <button id="clearDiscountsBtn">Clear All Discounts</button>
+          <p id="discountNote" style="font-size:0.74rem;color:#555;margin-top:6px;"></p>
+        </div>
+        <div class="store-product-list" id="storeList"></div>
+        <div id="adminSellSection" style="margin-top:16px;border-top:1px solid rgba(0,0,0,0.12);padding-top:10px;">
+          <h4>📤 Sell Action Cards (Admin)</h4>
+          <p style="font-size:0.78rem;color:#555;margin-bottom:8px;">
+            List any action card on the Shop at a price of your choice — even ones you don't own.
+            Proceeds do <b>not</b> go to your balance; the card is simply put up for sale in the Shop.
+          </p>
+          <label>Price (SDC)</label>
+          <input type="number" id="adminSellPrice" value="100" min="1">
+          <label>Quantity (how many can be sold)</label>
+          <input type="number" id="adminSellQty" value="1" min="1">
+          <div class="store-product-list" id="adminSellList"></div>
+        </div>
+      </div>
+      <div class="admin-card-form">
+        <h4>👥 Players</h4>
+        <p style="font-size:0.78rem;color:#555;margin-bottom:8px;">
+          Every player who has ever played, online or not.
+        </p>
+        <button id="refreshPlayersBtn" style="margin-bottom:8px;">🔄 Refresh</button>
+        <div class="card-list" id="adminPlayerList" style="max-height:300px;">
+          <span style="color:#888;">Loading…</span>
+        </div>
+      </div>
+      <div class="admin-card-form">
+        <h4>💾 Supabase Account DB</h4>
+        <p style="font-size:0.78rem;color:#555;margin-bottom:8px;">
+          Player account balances pulled live from the Supabase <code>players</code> table (separate from Firebase).
+        </p>
+        <button id="refreshSupabaseBtn" style="margin-bottom:8px;">🔄 Refresh</button>
+        <list id="supabasePlayersList" style="list-style:none;display:flex;flex-direction:column;gap:0.5rem;max-height:320px;overflow:auto;"></list>
+        <p id="supabaseLoadStatus" style="font-size:0.75rem;color:#888;margin-top:6px;"></p>
+      </div>
+      <div class="admin-card-form">
+        <h4>🎟️ Promo Codes</h4>
+        <p style="font-size:0.76rem;color:#555;margin:0 0 8px;">
+          Create a promo code that grants players a fixed item set (chosen below).
+          Each player can redeem a code once.
+        </p>
+        <label>Promo Code</label>
+        <input type="text" id="promoCode" placeholder="e.g. SUMMER25">
+        <label>Items to grant (tick one or more)</label>
+        <div id="promoCardIds" class="pack-checkbox-list"></div>
+        <button id="createPromoBtn">➕ Create Promo Code</button>
+        <div class="store-product-list" id="promoList" style="margin-top:10px;"></div>
+      </div>
+      <div class="admin-card-form">
+        <h4>🐞 Debug Panel</h4>
+        <p style="font-size:0.76rem;color:#555;margin:0 0 8px;">Live client state (refreshes when the panel opens).</p>
+        <pre id="debugState" style="font-size:0.72rem;background:rgba(0,0,0,0.05);padding:8px;border-radius:8px;max-height:220px;overflow:auto;white-space:pre-wrap;"></pre>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          <button id="dbgRefreshBtn">🔄 Refresh State</button>
+          <button id="dbgReloadCardsBtn">♻️ Reload Cards</button>
+          <button id="dbgForceWinBtn">🏆 Force My Win</button>
+          <button id="dbgGiveCurrencyBtn">💰 +100 SDC</button>
+        </div>
+        <p id="debugMsg" style="font-size:0.74rem;color:#2b7a2b;margin-top:6px;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js",
+      "firebase/database": "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js"
+    }
+  }
+</script>
+<script type="module">
+import { initializeApp } from "firebase/app";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getDatabase, ref, set, push, onValue, update, remove, onDisconnect, get } from "firebase/database";
+
+// ============================================================
+// CONFIG & ADMIN PASSWORD
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCriM3OajxWqc_QFDaNZsMV8aj-a4Us3TY",
+  authDomain: "skyduels-da09c.firebaseapp.com",
+  databaseURL: "https://skyduels-da09c-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "skyduels-da09c",
+  storageBucket: "skyduels-da09c.firebasestorage.app",
+  messagingSenderId: "821493827874",
+  appId: "1:821493827874:web:2c7ebebf3f783817347d7b",
+  measurementId: "G-EFPV1XJRWN"
+};
+
+const ADMIN_PASSWORD = "skyduelsforever2026!";
+
+// Gift code redemption
+const GIFT_CODE = "vHTJCQXf4Na7VFLuBBVCdozgpwwo745H4ews9bquWvSYoP7hUx";
+const GIFT_REWARD = 150;
+
+function sanitizeKey(key) {
+  if (!key) return 'unknown';
+  return String(key).replace(/[.#$\[\]\/]/g, '_');
+}
+
+// ============================================================
+// INIT FIREBASE
+// ============================================================
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+// ============================================================
+// GLOBAL STATE
+// ============================================================
+let currentUser = null;
+let currentRoom = null;
+let myPlayerId = null;
+let gameData = null;
+let isMyTurn = false;
+let selectedHandIndex = -1; // deprecated
+let selection = null; // {kind:'deploy'|'attacker'|'action', source, index}
+let lastTurnKey = null;
+let cardCache = {};
+let isAdmin = false;
+let editCardId = null;
+let aiTimeout = null;
+let userCurrency = 0;
+
+// True while the player is in an active match (battle). Shop and Admin must
+// be locked during battle so players can't gain cards or change rules mid-fight.
+function inBattle() {
+  return !!currentRoom && !!gameData && gameData.status === 'active';
+}
+
+// Reflect the battle state on the Shop/Admin toggles (disable them in battle).
+function updateToggleButtons() {
+  const locked = inBattle();
+  const shopToggle = document.getElementById('shopToggle');
+  const adminToggle = document.getElementById('adminToggle');
+  if (shopToggle) {
+    // Shop stays openable during a battle (you can browse / buy for your next
+    // match); only Admin is locked, since that changes rules mid-fight.
+    shopToggle.disabled = false;
+    shopToggle.style.opacity = '1';
+    shopToggle.title = '';
+  }
+  if (adminToggle) {
+    adminToggle.disabled = locked;
+    adminToggle.style.opacity = locked ? '0.4' : '1';
+    adminToggle.title = locked ? 'Unavailable during battle' : '';
+  }
+}
+
+// Mode → deck caps. Standard (5v5/chaos): 5 action + 10 planes. Extended (7v7): 7 action + 10 planes.
+function getModeCaps(mode) {
+  if (mode === '7v7') return { actionCap: 7, backupCap: 10, frontCap: 5 };
+  return { actionCap: 5, backupCap: 10, frontCap: 5 }; // 5v5, chaos
+}
+function shuffleArr(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+// Always return a 5-slot front-line array. This guards against two Firebase
+// quirks that previously crashed the game:
+//   1. A field stored as [] / shorter than 5, which made findIndex(s => s === null)
+//      return -1 and falsely report "front line full".
+//   2. Firebase deletes null values from arrays, so a field with a gap in the
+//      middle (e.g. a destroyed front card) is read back as a plain OBJECT keyed
+//      by index ({"1":cardB,"2":cardC}). Code then calling .map/.some/.forEach on
+//      it threw "X is not a function" and crashed the listener. We rebuild a real
+//      array here, preserving each card's slot.
+function normalizeField(field) {
+  const arr = [null, null, null, null, null];
+  if (Array.isArray(field)) {
+    for (let i = 0; i < Math.min(field.length, 5); i++) arr[i] = field[i];
+  } else if (field && typeof field === 'object') {
+    for (const k of Object.keys(field)) {
+      const idx = parseInt(k, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < 5) arr[idx] = field[k];
+    }
+  }
+  return arr;
+}
+
+// DOM refs
+const lobbySection = document.getElementById('lobbySection');
+const gameSection = document.getElementById('gameSection');
+const adminPanel = document.getElementById('adminPanel');
+const shopPanel = document.getElementById('shopPanel');
+const lineupPanel = document.getElementById('lineupPanel');
+const playerStatus = document.getElementById('playerStatus');
+const statusBadge = document.getElementById('statusBadge');
+const roomCodeDisplay = document.getElementById('roomCodeDisplay');
+const gameModeDisplay = document.getElementById('gameModeDisplay');
+const turnIndicator = document.getElementById('turnIndicator');
+const battlefield = document.getElementById('battlefield');
+const handArea = document.getElementById('handArea');
+const targetSelector = document.getElementById('targetSelector');
+const debugPanel = document.getElementById('debugPanel');
+const shopGrid = document.getElementById('shopGrid');
+const cardListDiv = document.getElementById('cardList');
+
+let debugLog = [];
+function debug(msg) {
+  console.log("[SkyDuels]", msg);
+  debugLog.push(msg);
+  if (debugLog.length > 200) debugLog = debugLog.slice(-200);
+  if (debugPanel) {
+    debugPanel.innerHTML = debugLog.map(m => `• ${escapeHtml(m)}`).join('<br>');
+    debugPanel.scrollTop = debugPanel.scrollHeight;
+  }
+}
+
+function updateCurrencyDisplay() {
+  const badge = document.getElementById('currencyBadge');
+  if (badge) badge.textContent = `💰 ${userCurrency || 0} SDC`;
+  const shopBadge = document.getElementById('shopCurrencyBadge');
+  if (shopBadge) shopBadge.textContent = `${userCurrency || 0} SDC`;
+}
+
+// Adds SDC to a real user's persistent balance. If the recipient is the local
+// player, the in-memory `userCurrency` and on-screen badges are updated too.
+// `reason` is only used for the debug log.
+async function awardCurrency(safeUid, amount, reason) {
+  if (!safeUid || amount <= 0) return;
+  const userRef = ref(db, `users/${safeUid}`);
+  const snap = await get(userRef);
+  const bal = snap.exists() ? (Number(snap.val().currency) || 0) : 0;
+  const next = bal + amount;
+  await update(userRef, { currency: next });
+  if (currentUser && sanitizeKey(currentUser.uid) === safeUid) {
+    userCurrency = next;
+    updateCurrencyDisplay();
+  }
+  debug(`💰 +${amount} SDC → ${safeUid.slice(0, 6)}${reason ? ' (' + reason + ')' : ''}`);
+}
+
+// Grants a set of card IDs to a user's hand (used by Promo Codes / admin).
+async function grantCardsToUser(safeUid, cardIds) {
+  if (!safeUid || !cardIds || cardIds.length === 0) return [];
+  const valid = cardIds.filter(id => cardCache[id]);
+  if (valid.length === 0) return [];
+  const userRef = ref(db, `users/${safeUid}`);
+  const snap = await get(userRef);
+  const hand = snap.exists() ? (snap.val().hand || []) : [];
+  const newHand = [...hand, ...valid];
+  await update(userRef, { hand: newHand });
+  if (currentUser && sanitizeKey(currentUser.uid) === safeUid) {
+    await loadCardCache();
+    updateCardList();
+  }
+  return valid;
+}
+
+// Reward ranges for winning a match.
+const REWARD_VS_AI = [10, 50];       // 10-50 SDC
+const REWARD_VS_PLAYER = [75, 150];  // 75-150 SDC
+const CHAOS_PRIZE_MAX = 250;         // Chaos Dungeon prizes up to 250 SDC
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================
+// ADMIN PASSWORD
+// ============================================================
+function promptAdminPassword() {
+  if (isAdmin) return true;
+  const entered = prompt("Enter admin password:");
+  if (entered === ADMIN_PASSWORD) {
+    isAdmin = true;
+    debug("👑 Admin access granted.");
+    return true;
+  } else if (entered !== null) {
+    alert("Incorrect password.");
+  }
+  return false;
+}
+
+function hideAdminPanel() {
+  adminPanel.classList.remove('active');
+  adminPanel.style.display = 'none';
+}
+
+// ============================================================
+// AUTH — Email / Password (anonymous auth disabled)
+// ============================================================
+// NOTE: In the Firebase console (Authentication → Sign-in method) you must
+// ENABLE "Email/Password" and DISABLE "Anonymous" for this to work.
+
+// Guard: only allow gameplay once a real (email/password) account is signed in.
+function requireAuth() {
+  if (!currentUser) {
+    alert("Please register or log in first.");
+    return false;
+  }
+  return true;
+}
+
+// --- Register ---
+document.getElementById('registerBtn').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) return alert("Enter an email and password.");
+  if (password.length < 6) return alert("Password must be at least 6 characters.");
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+    debug("✅ Registered new account.");
+  } catch (e) {
+    alert("Registration failed: " + (e && e.message ? e.message : e));
+  }
+});
+
+// --- Login ---
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if (!email || !password) return alert("Enter an email and password.");
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    debug("✅ Logged in.");
+  } catch (e) {
+    alert("Login failed: " + (e && e.message ? e.message : e));
+  }
+});
+
+// --- Logout ---
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    debug("👋 Signed out.");
+  } catch (e) {
+    alert("Logout failed: " + (e && e.message ? e.message : e));
+  }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (user && user.email) {
+    currentUser = user;
+    playerStatus.textContent = `✅ ${user.email}`;
+    statusBadge.textContent = "🔗 Connected";
+    debug(`✅ Authenticated: ${user.uid} (${user.email})`);
+    document.getElementById('authControls').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    document.querySelector('.lobby-card')?.classList.add('active');
+    await loadUserData();
+  } else {
+    currentUser = null;
+    playerStatus.textContent = '🔴 Logged out';
+    statusBadge.textContent = "❌ Sign in required";
+    document.getElementById('authControls').style.display = 'flex';
+    document.getElementById('logoutBtn').style.display = 'none';
+    // Lock gameplay until the player signs in.
+    if (currentRoom) {
+      try { await leaveGame(); } catch (e) {}
+    }
+  }
+});
+
+async function loadUserData() {
+  if (!currentUser) return;
+  const safeUid = sanitizeKey(currentUser.uid);
+  const userRef = ref(db, `users/${safeUid}`);
+  const snap = await get(userRef);
+  if (snap.exists()) {
+    const data = snap.val();
+    userCurrency = data.currency || 0;
+  } else {
+    await set(userRef, { currency: 150, hand: [] });
+    userCurrency = 150;
+    debug("✅ New user created with 150 SDC.");
+  }
+  // --- PLAYER REGISTRY & PRESENCE ---
+  // Every player is permanently registered under users/{uid} with a display
+  // name and lastSeen, and `online` is kept live via onDisconnect so admins
+  // can see who is online right now vs. who has played before.
+  try {
+    await update(userRef, { name: `Player ${safeUid.slice(0, 6)}`, lastSeen: Date.now(), online: true });
+    onDisconnect(ref(db, `users/${safeUid}/online`)).set(false);
+    onDisconnect(ref(db, `users/${safeUid}/lastSeen`)).set(Date.now());
+  } catch (e) { debug('⚠️ Presence setup: ' + (e && e.message)); }
+  updateCurrencyDisplay();
+}
+
+// ============================================================
+// LOBBY CARD SELECTION
+// ============================================================
+document.querySelectorAll('.lobby-card').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.lobby-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    debug(`Selected mode: ${el.dataset.mode}`);
+  });
+});
+
+// ============================================================
+// CHECK FIREBASE
+// ============================================================
+document.getElementById('checkFirebaseBtn').addEventListener('click', async () => {
+  debug("🔍 Running Firebase test...");
+  try {
+    const testRef = ref(db, 'test_connection');
+    await set(testRef, { timestamp: Date.now() });
+    await get(testRef);
+    await remove(testRef);
+    alert("✅ Firebase is working!");
+    debug("✅ Firebase test passed.");
+  } catch (e) {
+    alert("❌ Firebase error: " + e.message);
+    debug("❌ Firebase test failed: " + e.message);
+  }
+});
+
+// ============================================================
+// ADMIN TOGGLE
+// ============================================================
+document.getElementById('adminToggle').addEventListener('click', () => {
+  if (inBattle()) return alert('Admin console is locked during battle.');
+  if (!isAdmin && !promptAdminPassword()) return;
+  adminPanel.classList.toggle('active');
+  adminPanel.style.display = adminPanel.classList.contains('active') ? 'block' : 'none';
+  if (adminPanel.classList.contains('active')) { renderAdminSellList(); renderAdminPlayerList(); loadSupabasePlayers(); }
+});
+
+// ============================================================
+// SHOP TOGGLE
+// ============================================================
+document.getElementById('shopToggle').addEventListener('click', () => {
+  shopPanel.classList.toggle('active');
+  if (shopPanel.classList.contains('active')) {
+    shopPanel.style.display = 'block';
+    updateCurrencyDisplay();
+    loadShopProducts();
+  } else {
+    shopPanel.style.display = 'none';
+  }
+});
+
+// ============================================================
+// LINEUP TOGGLE
+// ============================================================
+document.getElementById('lineupToggle').addEventListener('click', () => {
+  lineupPanel.classList.toggle('active');
+  if (lineupPanel.classList.contains('active')) {
+    lineupPanel.style.display = 'block';
+    updateCurrencyDisplay();
+    renderLineupEditor();
+  } else {
+    lineupPanel.style.display = 'none';
+  }
+});
+
+// ----- GIFT CODE REDEMPTION -----
+document.getElementById('redeemGiftBtn').addEventListener('click', redeemGiftCode);
+document.getElementById('giftCodeInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') redeemGiftCode();
+});
+
+async function redeemGiftCode() {
+  if (!currentUser) return alert('Please wait for authentication.');
+  const input = document.getElementById('giftCodeInput');
+  const code = (input?.value || '').trim();
+  if (!code) return alert('Enter a gift code.');
+  if (code !== GIFT_CODE) return alert('Invalid gift code.');
+  const safeUid = sanitizeKey(currentUser.uid);
+  const userRef = ref(db, `users/${safeUid}`);
+  const snap = await get(userRef);
+  if (!snap.exists()) return alert('User data not found.');
+  const data = snap.val();
+  const redeemed = data.redeemed || {};
+  if (redeemed[code]) return alert('This gift code has already been redeemed.');
+  const newCurrency = (Number(data.currency) || 0) + GIFT_REWARD;
+  await update(userRef, { currency: newCurrency, redeemed: { ...redeemed, [code]: true } });
+  userCurrency = newCurrency;
+  updateCurrencyDisplay();
+  if (currentRoom) {
+    await update(ref(db, `games/${currentRoom}/players/${safeUid}`), { currency: newCurrency });
+  }
+  alert(`🎁 +${GIFT_REWARD} SDC redeemed!`);
+  debug(`✅ Gift code redeemed: +${GIFT_REWARD} SDC.`);
+  if (input) input.value = '';
+}
+
+// ============================================================
+// PLAY BUTTON
+// ============================================================
+document.getElementById('playBtn').addEventListener('click', async () => {
+  if (!currentUser) return alert('Please register or log in first.');
+  const activeCard = document.querySelector('.lobby-card.active');
+  const mode = activeCard ? activeCard.dataset.mode : '5v5';
+  debug(`Play! requested with mode: ${mode}`);
+  
+  const newRoomRef = push(ref(db, 'games'));
+  const roomId = newRoomRef.key;
+  const safeUid = sanitizeKey(currentUser.uid);
+  const playerData = {
+    uid: currentUser.uid,
+    action: [],
+    backup: [],
+    field: [null, null, null, null, null],
+    isAlive: true,
+    currency: userCurrency || 150
+  };
+  try {
+    await set(newRoomRef, {
+      mode: mode,
+      status: 'waiting',
+      turnOrder: [currentUser.uid],
+      currentTurnIndex: 0,
+      players: { [safeUid]: playerData },
+      globalDragons: { eastOwner: null, westOwner: null },
+      logs: [],
+      created: Date.now()
+    });
+    debug(`✅ Room created: ${roomId}`);
+    await joinRoom(roomId);
+    if (aiTimeout) clearTimeout(aiTimeout);
+    aiTimeout = setTimeout(async () => {
+      const snap = await get(ref(db, `games/${roomId}`));
+      if (!snap.exists()) return;
+      const freshData = snap.val();
+      const playerCount = Object.keys(freshData.players).filter(pid => freshData.players[pid].isAlive).length;
+      if (playerCount < 2 && freshData.status === 'waiting') {
+        debug("⏰ No opponent joined – adding AI player.");
+        const aiUid = 'ai_' + Date.now();
+        const aiSafe = sanitizeKey(aiUid);
+        const aiEntry = {
+          uid: aiUid,
+          action: [],
+          backup: [],
+          field: [null, null, null, null, null],
+          isAlive: true,
+          currency: 0
+        };
+        await update(ref(db, `games/${roomId}`), {
+          [`players/${aiSafe}`]: aiEntry,
+          turnOrder: [...freshData.turnOrder, aiUid]
+        });
+        await seedAIPlayer(roomId, aiUid, aiSafe, mode);
+        debug("🤖 AI player added.");
+      }
+      aiTimeout = null;
+    }, 5000);
+  } catch (e) {
+    alert("Failed to start game: " + e.message);
+    debug("❌ Play! error: " + e.message);
+  }
+});
+
+// ============================================================
+// CREATE ROOM (admin-only)
+// ============================================================
+document.getElementById('createRoomBtn').addEventListener('click', async () => {
+  if (!currentUser) return alert('Please register or log in first.');
+  if (!isAdmin && !promptAdminPassword()) return;
+  const activeCard = document.querySelector('.lobby-card.active');
+  const mode = activeCard ? activeCard.dataset.mode : '5v5';
+  const newRoomRef = push(ref(db, 'games'));
+  const roomId = newRoomRef.key;
+  const safeUid = sanitizeKey(currentUser.uid);
+  const playerData = {
+    uid: currentUser.uid,
+    action: [],
+    backup: [],
+    field: [null, null, null, null, null],
+    isAlive: true,
+    currency: userCurrency || 150
+  };
+  try {
+    await set(newRoomRef, {
+      mode: mode,
+      status: 'waiting',
+      turnOrder: [currentUser.uid],
+      currentTurnIndex: 0,
+      players: { [safeUid]: playerData },
+      globalDragons: { eastOwner: null, westOwner: null },
+      logs: [],
+      created: Date.now()
+    });
+    joinRoom(roomId);
+  } catch (e) {
+    alert("Failed to create room: " + e.message);
+  }
+});
+
+// ============================================================
+// JOIN ROOM (manual)
+// ============================================================
+document.getElementById('joinRoomBtn').addEventListener('click', () => {
+  const code = document.getElementById('joinRoomInput').value.trim();
+  if (!code) return alert('Enter a room code.');
+  joinRoom(code);
+});
+
+async function joinRoom(roomId) {
+  if (!currentUser) return alert('Not authenticated.');
+  const roomRef = ref(db, `games/${roomId}`);
+  let snap;
+  try { snap = await get(roomRef); } catch (e) {
+    alert("Error reading room: " + e.message);
+    return;
+  }
+  if (!snap.exists()) return alert('Room not found.');
+  const data = snap.val();
+  const safeUid = sanitizeKey(currentUser.uid);
+  
+  await loadUserData();
+  
+  if (!data.players[safeUid]) {
+    const playerEntry = {
+      uid: currentUser.uid,
+      action: [],
+      backup: [],
+      field: [null, null, null, null, null],
+      isAlive: true,
+      currency: userCurrency || 150
+    };
+    const newTurnOrder = [...data.turnOrder, currentUser.uid];
+    try {
+      await update(roomRef, {
+        [`players/${safeUid}`]: playerEntry,
+        turnOrder: newTurnOrder
+      });
+    } catch (e) {
+      alert("Error joining room: " + e.message);
+      return;
+    }
+  }
+  currentRoom = roomId;
+  myPlayerId = currentUser.uid;
+  if (roomCodeDisplay) roomCodeDisplay.textContent = roomId;
+  lobbySection.classList.remove('active');
+  gameSection.classList.add('active');
+  hideAdminPanel();
+  shopPanel.classList.remove('active');
+  shopPanel.style.display = 'none';
+  debug(`✅ Joined room ${roomId}`);
+  listenGame(roomId);
+  await initializeDeck(roomId);
+  if (aiTimeout) { clearTimeout(aiTimeout); aiTimeout = null; }
+}
+
+// ============================================================
+// LEAVE GAME
+// ============================================================
+async function leaveGame() {
+  if (gameListenerUnsub) { gameListenerUnsub(); gameListenerUnsub = null; }
+  if (currentRoom && currentUser) {
+    const safeUid = sanitizeKey(currentUser.uid);
+    const roomRef = ref(db, `games/${currentRoom}/players/${safeUid}`);
+    await remove(roomRef);
+    const turnRef = ref(db, `games/${currentRoom}/turnOrder`);
+    const snap = await get(turnRef);
+    if (snap.exists()) {
+      const order = snap.val().filter(id => id !== currentUser.uid);
+      await set(turnRef, order);
+    }
+    await checkWinCondition(roomRef);
+  }
+  currentRoom = null;
+  aiProcessing = false;
+  gameSection.classList.remove('active');
+  lobbySection.classList.add('active');
+  updateToggleButtons();
+  selectedHandIndex = -1;
+  if (aiTimeout) { clearTimeout(aiTimeout); aiTimeout = null; }
+}
+document.getElementById('leaveGameBtn').addEventListener('click', leaveGame);
+
+// Restart the current match: clear every board and re-deal (human from owned
+// cards, AI with a fresh random level). The game returns to the lobby/waiting
+// state so it auto-starts again once player count is met.
+async function restartMatch() {
+  if (!currentRoom || !currentUser) return;
+  if (!confirm('Restart this match? All boards will be cleared and re-dealt.')) return;
+  const gameRef = ref(db, `games/${currentRoom}`);
+  const snap = await get(gameRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const mode = data.mode;
+  const updates = { status: 'waiting', currentTurnIndex: 0 };
+  for (const pid of Object.keys(data.players)) {
+    if (!data.players[pid].isAlive) continue;
+    updates[`players/${pid}/field`] = [null, null, null, null, null];
+    updates[`players/${pid}/action`] = [];
+    updates[`players/${pid}/backup`] = [];
+  }
+  await update(gameRef, updates);
+  // Re-deal the human from their owned cards, and each AI with a new random level.
+  await initializeDeck(currentRoom, true);
+  for (const pid of Object.keys(data.players)) {
+    if (!data.players[pid].isAlive || !pid.startsWith('ai_')) continue;
+    const aiUid = data.players[pid].uid || pid;
+    await seedAIPlayer(currentRoom, aiUid, sanitizeKey(aiUid), mode);
+  }
+  selection = null;
+  debug('🔄 Match restarted.');
+}
+document.getElementById('restartMatchBtn').addEventListener('click', restartMatch);
+
+// Wipe the player's progress: owned cards + currency reset to the starting 150.
+async function resetProgress() {
+  if (!currentUser) return;
+  if (!confirm('Reset ALL progress? This wipes your owned cards and resets currency to 150 SDC. This cannot be undone.')) return;
+  const safeUid = sanitizeKey(currentUser.uid);
+  await set(ref(db, `users/${safeUid}`), { currency: 150, hand: [] });
+  userCurrency = 150;
+  updateCurrencyDisplay();
+  // Clear the current board too so the next deal starts empty.
+  if (currentRoom) {
+    await update(ref(db, `games/${currentRoom}/players/${safeUid}`), {
+      action: [], backup: [], field: [null, null, null, null, null]
+    });
+  }
+  alert('Progress reset. Your deck is now empty — buy cards in the Shop.');
+  debug('🧹 Progress reset.');
+}
+document.getElementById('resetProgressBtn').addEventListener('click', resetProgress);
+async function initializeDeck(roomId, force = false) {
+  const roomRef = ref(db, `games/${roomId}`);
+  const roomSnap = await get(roomRef);
+  if (!roomSnap.exists()) return;
+  const room = roomSnap.val();
+  // Only seed while the match is still in the lobby. If the game is already
+  // active (e.g. a player rejoining mid-match) we must NOT overwrite the
+  // in-progress board, otherwise their played state would be wiped.
+  // `force` is used by Restart, which clears boards first and re-deals.
+  if (room.status !== 'waiting' && !force) return;
+  const safeUid = sanitizeKey(currentUser.uid);
+  const player = room.players?.[safeUid];
+  // If this player already has a seeded board, don't re-seed (preserves their
+  // state on a refresh/rejoin).
+  if (player && (
+        (Array.isArray(player.action) && player.action.length > 0) ||
+        (Array.isArray(player.backup) && player.backup.length > 0) ||
+        (Array.isArray(player.field) && player.field.some(s => s !== null))
+     )) return;
+
+  await loadCardCache();
+
+  const mode = room.mode;
+  const caps = getModeCaps(mode);
+
+  // Battle deck = ONLY the player's owned cards (users/${uid}/hand).
+  // No default or global-pool filler cards are added.
+  let owned = [];
+  const userSnap = await get(ref(db, `users/${safeUid}`));
+  if (userSnap.exists()) {
+    const u = userSnap.val();
+    owned = Array.isArray(u.hand) ? u.hand.filter(id => cardCache[id]) : [];
+  }
+  if (owned.length === 0) {
+    debug('⚠️ No owned cards — starting with an empty deck. Visit the Shop to buy cards.');
+  }
+
+  const ownedCards = owned.map(id => ({ id, card: cardCache[id] }));
+
+  // Use the player's saved lineup (if any); otherwise auto-deal from owned.
+  let actions, planes;
+  const luSnap = await get(ref(db, `users/${safeUid}/lineup`));
+  const lu = luSnap.exists() ? (luSnap.val() || {}) : {};
+  const savedAction = Array.isArray(lu.action) ? lu.action.filter(id => cardCache[id] && (cardCache[id].type || 'plane') === 'action') : [];
+  const savedBackup = Array.isArray(lu.backup) ? lu.backup.filter(id => cardCache[id] && (cardCache[id].type || 'plane') !== 'action') : [];
+  const hasSaved = savedAction.length > 0 || savedBackup.length > 0;
+  if (hasSaved) {
+    actions = savedAction.slice(0, caps.actionCap).map(id => ({ id, card: cardCache[id] }));
+    planes  = savedBackup.slice(0, caps.backupCap).map(id => ({ id, card: cardCache[id] }));
+  } else {
+    // A card is a regular (plane-type) card unless its type is exactly 'action'.
+    // Sheet types are stored capitalized ("Plane", "Military", …), so we must
+    // NOT compare against the lowercase 'plane' literal here.
+    const ownedActions = shuffleArr(ownedCards.filter(c => (c.card.type || 'plane') === 'action'));
+    const ownedPlanes  = shuffleArr(ownedCards.filter(c => (c.card.type || 'plane') !== 'action'));
+    actions = ownedActions.slice(0, caps.actionCap);
+    planes  = ownedPlanes.slice(0, caps.backupCap);
+  }
+
+  const toObj = c => ({ cardId: c.id, hp: c.card.hp, dmg: c.card.dmg, skill: c.card.skill });
+  const actionArr = actions.map(toObj);
+  const backupArr = planes.map(toObj);
+  const field = [null, null, null, null, null];
+  await update(ref(db, `games/${roomId}/players/${safeUid}`), { action: actionArr, backup: backupArr, field });
+  debug(`✅ Deck seeded: ${actionArr.length} action + ${backupArr.length} backup (${hasSaved ? 'saved lineup' : 'auto, owned only'}, mode ${mode}).`);
+}
+
+// ============================================================
+// LINEUP EDITOR (pick & save a player's starting lineup)
+// ============================================================
+// Caps for the editor are the maximum per mode (7v7: 7 action / 10 backup).
+// When a match starts, initializeDeck slices to the selected mode's caps.
+const LINEUP_CAPS = { action: 7, backup: 10 };
+// The action cap actually enforced for the current room's mode (5v5/chaos = 5,
+// 7v7 = 7). The editor uses this so the lineup you pick always matches what the
+// battlefield will show (otherwise the board would silently drop extra cards).
+let lineupActionCap = 5;
+// Selection is stored as arrays of INDICES into the per-instance owned lists
+// (lineupActions / lineupPlanes below), NOT a Set of cardIds. A Set would collapse
+// duplicate copies of the same card (e.g. 3× F-22 → 1), which is why a saved lineup
+// silently dropped copies and the battlefield showed fewer cards than the editor.
+let lineupActionSel = [];
+let lineupBackupSel = [];
+let lineupActions = [];
+let lineupPlanes = [];
+
+function isActionCard(id) {
+  return (cardCache[id]?.type || 'plane') === 'action';
+}
+
+// Turn a saved list of cardIds (which may repeat the same id for multiple copies)
+// back into indices into `ids` (the per-instance owned list), preserving the
+// multiset. For each saved id we pick the first not-yet-used matching instance.
+function mapIdsToIndices(savedIds, ids) {
+  const used = new Array(ids.length).fill(false);
+  const result = [];
+  for (const sid of savedIds) {
+    for (let i = 0; i < ids.length; i++) {
+      if (!used[i] && ids[i] === sid) { used[i] = true; result.push(i); break; }
+    }
+  }
+  return result;
+}
+
+async function renderLineupEditor() {
+  const actionList = document.getElementById('actionLineupList');
+  const backupList = document.getElementById('backupLineupList');
+  if (!currentUser) {
+    actionList.innerHTML = '<span style="color:#888;">Log in to set your lineup.</span>';
+    backupList.innerHTML = '';
+    return;
+  }
+  const safeUid = sanitizeKey(currentUser.uid);
+
+  // Determine the active mode so the editor enforces the same action cap the
+  // battlefield will use. Prefer the live room; fall back to the selected lobby card.
+  let mode = '5v5';
+  if (currentRoom) {
+    const rs = await get(ref(db, `games/${currentRoom}`));
+    if (rs.exists()) mode = rs.val().mode || '5v5';
+  } else {
+    const activeLobby = document.querySelector('.lobby-card.active');
+    if (activeLobby) mode = activeLobby.dataset.mode || '5v5';
+  }
+  lineupActionCap = getModeCaps(mode).actionCap;
+
+  const [userSnap, luSnap, boardSnap] = await Promise.all([
+    get(ref(db, `users/${safeUid}`)),
+    get(ref(db, `users/${safeUid}/lineup`)),
+    currentRoom ? get(ref(db, `games/${currentRoom}/players/${safeUid}`)) : Promise.resolve({ exists: () => false })
+  ]);
+  const hand = (userSnap.exists() && Array.isArray(userSnap.val().hand))
+    ? userSnap.val().hand.filter(id => cardCache[id]) : [];
+  let lu = luSnap.exists() ? (luSnap.val() || {}) : {};
+  // If there's no saved lineup yet, mirror the CURRENT battlefield board so the
+  // editor starts consistent with what's already shown (otherwise it opens empty
+  // while the battlefield has an auto-dealt deck).
+  if ((!Array.isArray(lu.action) || lu.action.length === 0) &&
+      (!Array.isArray(lu.backup) || lu.backup.length === 0) && boardSnap.exists()) {
+    const b = boardSnap.val() || {};
+    lu = {
+      action: (b.action || []).map(c => c.cardId).filter(id => hand.includes(id)),
+      backup: (b.backup || []).map(c => c.cardId).filter(id => hand.includes(id))
+    };
+  }
+  // Per-instance owned lists (duplicate cardIds kept so each copy is its own chip).
+  const actions = hand.filter(isActionCard);
+  const planes  = hand.filter(id => !isActionCard(id));
+  lineupActions = actions;
+  lineupPlanes = planes;
+  // Seed selection from the saved lineup. mapIdsToIndices maps the stored id list
+  // (duplicates allowed for multiple copies) back to per-instance indices, so a
+  // player who saved 3× F-22 keeps all 3 cards on the battlefield.
+  lineupActionSel = mapIdsToIndices(
+    (lu.action || []).filter(id => hand.includes(id) && isActionCard(id)).slice(0, lineupActionCap), actions);
+  lineupBackupSel = mapIdsToIndices(
+    (lu.backup || []).filter(id => hand.includes(id) && !isActionCard(id)), planes);
+  renderLineupChips(actionList, actions, lineupActionSel, 'action');
+  renderLineupChips(backupList, planes, lineupBackupSel, 'backup');
+  updateLineupCounts();
+}
+
+function renderLineupChips(container, ids, selIdxArr, kind) {
+  container.innerHTML = '';
+  if (ids.length === 0) {
+    container.innerHTML = '<span style="color:#888;font-size:0.85rem;">No cards of this type owned.</span>';
+    return;
+  }
+  const selSet = new Set(selIdxArr);
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    const selected = selSet.has(i);
+    const chip = document.createElement('button');
+    chip.className = 'lineup-chip' + (selected ? ' selected' : '');
+    chip.dataset.cid = id;
+    chip.textContent = (cardCache[id]?.name || 'Unknown') + (selected ? ' ✓' : '');
+    chip.addEventListener('click', () => toggleLineupChip(i, kind, chip));
+    container.appendChild(chip);
+  }
+}
+
+function toggleLineupChip(index, kind, chip) {
+  const sel = kind === 'action' ? lineupActionSel : lineupBackupSel;
+  const cap = kind === 'action' ? lineupActionCap : LINEUP_CAPS.backup;
+  const pos = sel.indexOf(index);
+  if (pos !== -1) {
+    sel.splice(pos, 1);
+  } else {
+    if (sel.length >= cap) return alert(`You can pick at most ${cap} ${kind} cards (limit for this mode).`);
+    sel.push(index);
+  }
+  const selected = sel.includes(index);
+  chip.classList.toggle('selected', selected);
+  chip.textContent = (cardCache[chip.dataset.cid]?.name || 'Unknown') + (selected ? ' ✓' : '');
+  updateLineupCounts();
+}
+
+function updateLineupCounts() {
+  document.getElementById('actionCount').textContent = lineupActionSel.length;
+  document.getElementById('backupCount').textContent = lineupBackupSel.length;
+  document.getElementById('actionCap').textContent = lineupActionCap;
+  // Reflect the per-mode action cap note (5v5/chaos use 5, 7v7 uses 7).
+  document.getElementById('lineupActionCapNote').textContent = lineupActionCap;
+}
+
+document.getElementById('saveLineupBtn').addEventListener('click', async () => {
+  if (!currentUser) return alert('Log in first.');
+  const safeUid = sanitizeKey(currentUser.uid);
+  // Convert the per-instance selection indices back into cardIds, preserving
+  // duplicates so multiple copies of the same card are kept in the saved lineup.
+  const data = {
+    action: lineupActionSel.map(i => lineupActions[i]).filter(Boolean),
+    backup: lineupBackupSel.map(i => lineupPlanes[i]).filter(Boolean)
+  };
+  try {
+    await set(ref(db, `users/${safeUid}/lineup`), data);
+    const status = document.getElementById('lineupStatus');
+    status.textContent = '✅ Lineup saved!';
+    setTimeout(() => { status.textContent = ''; }, 2500);
+    debug('✅ Lineup saved.');
+    // If we're still in the lobby (room 'waiting'), re-apply the lineup to the
+    // board right away so it shows on the battlefield with the correct cards.
+    // (Once a battle is active we must NOT overwrite the live board — use
+    // 🔄 Restart to apply a saved lineup mid-match.)
+    if (currentRoom) {
+      const roomSnap = await get(ref(db, `games/${currentRoom}`));
+      if (roomSnap.exists() && roomSnap.val().status === 'waiting') {
+        await update(ref(db, `games/${currentRoom}/players/${safeUid}`), {
+          action: [], backup: [], field: [null, null, null, null, null]
+        });
+        await initializeDeck(currentRoom, true);
+        debug('✅ Lineup applied to battlefield.');
+        await renderLineupEditor(); // keep the editor selection in sync with the board
+      } else {
+        status.textContent = '✅ Lineup saved — 🔄 Restart to apply in match';
+        setTimeout(() => { status.textContent = ''; }, 3000);
+      }
+    }
+  } catch (e) {
+    alert('Failed to save lineup: ' + e.message);
+  }
+});
+
+// ============================================================
+// SHEET CARDS — source of truth synced from the SkyDuels Google Sheet.
+// Each entry: { name, hp, dmg, skill, type, [effect] }
+//   `type` is the exact sheet label (Plane / Supersonic Jet / Freighter /
+//   Military / Special) and "action" for action cards. The game only
+//   distinguishes "action" vs everything-else (planes), so these labels
+//   are preserved as metadata.
+// ============================================================
+const SHEET_CARDS = [
+  { name: "Boeing 40", hp: 60, dmg: 70, skill: 1, type: "Plane" },
+  { name: "Boeing 80", hp: 60, dmg: 70, skill: 2, type: "Plane" },
+  { name: "ATR 42", hp: 110, dmg: 120, skill: 3, type: "Plane" },
+  { name: "ATR 72", hp: 110, dmg: 120, skill: 4, type: "Plane" },
+  { name: "Airbus A220-100", hp: 190, dmg: 220, skill: 5, type: "Plane" },
+  { name: "Airbus A220-300", hp: 190, dmg: 220, skill: 6, type: "Plane" },
+  { name: "Airbus A300", hp: 280, dmg: 250, skill: 7, type: "Plane" },
+  { name: "Airbus A310", hp: 280, dmg: 250, skill: 8, type: "Plane" },
+  { name: "Airbus A318", hp: 190, dmg: 220, skill: 9, type: "Plane" },
+  { name: "Airbus A319", hp: 190, dmg: 220, skill: 10, type: "Plane" },
+  { name: "Airbus A319neo", hp: 190, dmg: 220, skill: 11, type: "Plane" },
+  { name: "Airbus A320-200", hp: 190, dmg: 220, skill: 12, type: "Plane" },
+  { name: "Airbus A320neo", hp: 190, dmg: 220, skill: 13, type: "Plane" },
+  { name: "Airbus A321", hp: 190, dmg: 220, skill: 14, type: "Plane" },
+  { name: "Airbus A321neo", hp: 190, dmg: 220, skill: 15, type: "Plane" },
+  { name: "Airbus A321LR", hp: 190, dmg: 220, skill: 16, type: "Plane" },
+  { name: "Airbus A321XLR", hp: 190, dmg: 220, skill: 17, type: "Plane" },
+  { name: "Airbus A330-200", hp: 280, dmg: 250, skill: 18, type: "Plane" },
+  { name: "Airbus A330-300", hp: 280, dmg: 250, skill: 19, type: "Plane" },
+  { name: "Airbus A330-900neo", hp: 280, dmg: 250, skill: 20, type: "Plane" },
+  { name: "Airbus A340-200", hp: 380, dmg: 300, skill: 21, type: "Plane" },
+  { name: "Airbus A340-300", hp: 380, dmg: 300, skill: 22, type: "Plane" },
+  { name: "Airbus A340-500", hp: 380, dmg: 300, skill: 23, type: "Plane" },
+  { name: "Airbus A340-600", hp: 380, dmg: 300, skill: 24, type: "Plane" },
+  { name: "Airbus A350-900", hp: 380, dmg: 300, skill: 25, type: "Plane" },
+  { name: "Airbus A350ULR", hp: 380, dmg: 300, skill: 26, type: "Plane" },
+  { name: "Airbus A350-1000", hp: 380, dmg: 300, skill: 27, type: "Plane" },
+  { name: "Airbus A380-800", hp: 460, dmg: 320, skill: 1, type: "Plane" },
+  { name: "Antonov An-140", hp: 110, dmg: 120, skill: 2, type: "Plane" },
+  { name: "Antonov An-148", hp: 150, dmg: 170, skill: 3, type: "Plane" },
+  { name: "Antonov An-158", hp: 150, dmg: 170, skill: 4, type: "Plane" },
+  { name: "Antonov An-225", hp: 900, dmg: 110, skill: 5, type: "Plane" },
+  { name: "Beechcraft 200 Super King Air", hp: 60, dmg: 70, skill: 6, type: "Plane" },
+  { name: "Beechcraft 1300", hp: 60, dmg: 70, skill: 7, type: "Plane" },
+  { name: "Beriev Be-200", hp: 110, dmg: 120, skill: 8, type: "Plane" },
+  { name: "British Aerospace BAe 146", hp: 150, dmg: 170, skill: 9, type: "Plane" },
+  { name: "Boeing 717-200", hp: 190, dmg: 220, skill: 10, type: "Plane" },
+  { name: "Boeing 707-100", hp: 190, dmg: 220, skill: 11, type: "Plane" },
+  { name: "Boeing 707-200", hp: 190, dmg: 220, skill: 12, type: "Plane" },
+  { name: "Boeing 707-300", hp: 190, dmg: 220, skill: 13, type: "Plane" },
+  { name: "Boeing 707-420", hp: 190, dmg: 220, skill: 14, type: "Plane" },
+  { name: "Boeing 707-720", hp: 190, dmg: 220, skill: 15, type: "Plane" },
+  { name: "Boeing 727-100", hp: 190, dmg: 220, skill: 16, type: "Plane" },
+  { name: "Boeing 727-200", hp: 190, dmg: 220, skill: 17, type: "Plane" },
+  { name: "Boeing 727-200A", hp: 190, dmg: 220, skill: 18, type: "Plane" },
+  { name: "Boeing 737-100", hp: 190, dmg: 220, skill: 19, type: "Plane" },
+  { name: "Boeing 737-200", hp: 190, dmg: 220, skill: 20, type: "Plane" },
+  { name: "Boeing 737-300", hp: 190, dmg: 220, skill: 21, type: "Plane" },
+  { name: "Boeing 737-400", hp: 190, dmg: 220, skill: 22, type: "Plane" },
+  { name: "Boeing 737-500", hp: 190, dmg: 220, skill: 23, type: "Plane" },
+  { name: "Boeing 737-600", hp: 190, dmg: 220, skill: 24, type: "Plane" },
+  { name: "Boeing 737-700", hp: 190, dmg: 220, skill: 25, type: "Plane" },
+  { name: "Boeing 737-800", hp: 190, dmg: 220, skill: 26, type: "Plane" },
+  { name: "Boeing 737-900", hp: 190, dmg: 220, skill: 27, type: "Plane" },
+  { name: "Boeing 737 MAX 7", hp: 190, dmg: 220, skill: 1, type: "Plane" },
+  { name: "Boeing 737 MAX 8", hp: 190, dmg: 220, skill: 2, type: "Plane" },
+  { name: "Boeing 737 MAX 9", hp: 190, dmg: 220, skill: 3, type: "Plane" },
+  { name: "Boeing 737 MAX 10", hp: 190, dmg: 220, skill: 4, type: "Plane" },
+  { name: "Boeing 747-100", hp: 460, dmg: 320, skill: 5, type: "Plane" },
+  { name: "Boeing 747-200", hp: 460, dmg: 320, skill: 6, type: "Plane" },
+  { name: "Boeing 747-300", hp: 460, dmg: 320, skill: 7, type: "Plane" },
+  { name: "Boeing 747-400", hp: 460, dmg: 320, skill: 8, type: "Plane" },
+  { name: "Boeing 747-8", hp: 460, dmg: 320, skill: 9, type: "Plane" },
+  { name: "Boeing 2707", hp: 280, dmg: 250, skill: 11, type: "Supersonic Jet" },
+  { name: "Bombardier CRJ-100", hp: 150, dmg: 170, skill: 12, type: "Plane" },
+  { name: "Bombardier CRJ-200", hp: 150, dmg: 170, skill: 13, type: "Plane" },
+  { name: "Bombardier CRJ-700", hp: 150, dmg: 170, skill: 14, type: "Plane" },
+  { name: "Bombardier CRJ-900", hp: 150, dmg: 170, skill: 15, type: "Plane" },
+  { name: "Bombardier Dash 8", hp: 110, dmg: 120, skill: 16, type: "Plane" },
+  { name: "CASA C-212 Aviocar", hp: 110, dmg: 120, skill: 17, type: "Plane" },
+  { name: "Cessna 208", hp: 60, dmg: 70, skill: 18, type: "Plane" },
+  { name: "Cessna 404", hp: 60, dmg: 70, skill: 19, type: "Plane" },
+  { name: "Cirrus SR20", hp: 60, dmg: 70, skill: 20, type: "Plane" },
+  { name: "Cirrus SR22", hp: 60, dmg: 70, skill: 21, type: "Plane" },
+  { name: "Concorde", hp: 300, dmg: 275, skill: 11, type: "Supersonic Jet" },
+  { name: "Comac C919", hp: 190, dmg: 220, skill: 22, type: "Plane" },
+  { name: "Convair CV5800", hp: 110, dmg: 120, skill: 23, type: "Plane" },
+  { name: "de Havilland Canada Dash 7", hp: 110, dmg: 120, skill: 24, type: "Plane" },
+  { name: "De Havilland Canada Dash 8", hp: 110, dmg: 120, skill: 25, type: "Plane" },
+  { name: "Dornier 328", hp: 110, dmg: 120, skill: 26, type: "Plane" },
+  { name: "Embraer EMB 121 Xingu", hp: 60, dmg: 70, skill: 27, type: "Plane" },
+  { name: "Embraer EMB 120 Brasilia", hp: 110, dmg: 120, skill: 1, type: "Plane" },
+  { name: "Embraer EMB 820C", hp: 60, dmg: 70, skill: 2, type: "Plane" },
+  { name: "Embraer/FMA CBA 123 Vector", hp: 110, dmg: 120, skill: 3, type: "Plane" },
+  { name: "Embraer ERJ 135", hp: 150, dmg: 170, skill: 4, type: "Plane" },
+  { name: "Embraer ERJ 140", hp: 150, dmg: 170, skill: 5, type: "Plane" },
+  { name: "Embraer ERJ 145", hp: 150, dmg: 170, skill: 6, type: "Plane" },
+  { name: "Embraer 170", hp: 150, dmg: 170, skill: 7, type: "Plane" },
+  { name: "Embraer 175", hp: 150, dmg: 170, skill: 8, type: "Plane" },
+  { name: "Embraer 190", hp: 150, dmg: 170, skill: 9, type: "Plane" },
+  { name: "Embraer 195", hp: 150, dmg: 170, skill: 10, type: "Plane" },
+  { name: "Fairchild Dornier 328JET", hp: 150, dmg: 170, skill: 11, type: "Plane" },
+  { name: "Fokker 50", hp: 110, dmg: 120, skill: 12, type: "Plane" },
+  { name: "Fokker 70", hp: 150, dmg: 170, skill: 13, type: "Plane" },
+  { name: "Fokker 100", hp: 150, dmg: 170, skill: 14, type: "Plane" },
+  { name: "Irkut MS-21 (project)", hp: 190, dmg: 220, skill: 15, type: "Plane" },
+  { name: "Ilyushin Il-86", hp: 280, dmg: 250, skill: 16, type: "Plane" },
+  { name: "Ilyushin Il-96", hp: 280, dmg: 250, skill: 17, type: "Plane" },
+  { name: "Ilyushin Il-114", hp: 110, dmg: 120, skill: 18, type: "Plane" },
+  { name: "Indonesian Aerospace N-219", hp: 110, dmg: 120, skill: 19, type: "Plane" },
+  { name: "Indonesian Aerospace N-245", hp: 110, dmg: 120, skill: 20, type: "Plane" },
+  { name: "Indonesian Aerospace N-270", hp: 110, dmg: 120, skill: 21, type: "Plane" },
+  { name: "IPTN N-250", hp: 110, dmg: 120, skill: 22, type: "Plane" },
+  { name: "IPTN N-2130", hp: 150, dmg: 170, skill: 23, type: "Plane" },
+  { name: "McDonnell-Douglas MD-11", hp: 380, dmg: 300, skill: 24, type: "Plane" },
+  { name: "McDonnell Douglas MD-80", hp: 190, dmg: 220, skill: 25, type: "Plane" },
+  { name: "McDonnell Douglas MD-90", hp: 190, dmg: 220, skill: 26, type: "Plane" },
+  { name: "McDonnell-Douglas MD-95", hp: 190, dmg: 220, skill: 27, type: "Plane" },
+  { name: "Mitsubishi Regional Jet (project)", hp: 150, dmg: 170, skill: 1, type: "Plane" },
+  { name: "Neiva Carajá", hp: 60, dmg: 70, skill: 2, type: "Plane" },
+  { name: "Piper Chieftain", hp: 60, dmg: 70, skill: 3, type: "Plane" },
+  { name: "Piper T-1020", hp: 60, dmg: 70, skill: 4, type: "Plane" },
+  { name: "Piper T-1040", hp: 60, dmg: 70, skill: 5, type: "Plane" },
+  { name: "Reims-Cessna F406 Caravan II", hp: 110, dmg: 120, skill: 6, type: "Plane" },
+  { name: "Short 330", hp: 110, dmg: 120, skill: 7, type: "Plane" },
+  { name: "Short 360", hp: 150, dmg: 170, skill: 8, type: "Plane" },
+  { name: "Sukhoi Superjet 100", hp: 190, dmg: 220, skill: 9, type: "Plane" },
+  { name: "Tupolev Tu-204", hp: 150, dmg: 170, skill: 10, type: "Plane" },
+  { name: "Yakovlev Yak-42", hp: 150, dmg: 170, skill: 11, type: "Plane" },
+  { name: "Saab 340", hp: 110, dmg: 120, skill: 12, type: "Plane" },
+  { name: "Saab 2000", hp: 110, dmg: 120, skill: 13, type: "Plane" },
+  { name: "C-5 Galaxy", hp: 700, dmg: 80, skill: 5, type: "Freighter" },
+  { name: "C-17 Globemaster III", hp: 750, dmg: 90, skill: 6, type: "Freighter" },
+  { name: "Antonov An-124 Ruslan", hp: 820, dmg: 100, skill: 10, type: "Freighter" },
+  { name: "Boeing 747-400F", hp: 700, dmg: 70, skill: 8, type: "Freighter" },
+  { name: "Boeing 777F", hp: 720, dmg: 80, skill: 7, type: "Freighter" },
+  { name: "Airbus A330-200F", hp: 650, dmg: 75, skill: 5, type: "Freighter" },
+  { name: "Boeing 767-300F", hp: 600, dmg: 70, skill: 8, type: "Freighter" },
+  { name: "Airbus A400M Atlas", hp: 450, dmg: 90, skill: 6, type: "Freighter" },
+  { name: "Lockheed C-130 Hercules", hp: 400, dmg: 100, skill: 10, type: "Freighter" },
+  { name: "Boeing Dreamlifter (747 LCF)", hp: 680, dmg: 65, skill: 7, type: "Freighter" },
+  { name: "F-16 Fighting Falcon", hp: 350, dmg: 220, skill: 1, type: "Military" },
+  { name: "F-15 Eagle", hp: 450, dmg: 380, skill: 4, type: "Military" },
+  { name: "F-22 Raptor", hp: 500, dmg: 320, skill: 4, type: "Military" },
+  { name: "F-35 Lightning II", hp: 400, dmg: 360, skill: 9, type: "Military" },
+  { name: "F/A-18 Hornet", hp: 380, dmg: 300, skill: 3, type: "Military" },
+  { name: "Su-57 Felon", hp: 480, dmg: 300, skill: 3, type: "Military" },
+  { name: "Su-35 Flanker-E", hp: 470, dmg: 330, skill: 4, type: "Military" },
+  { name: "MiG-29 Fulcrum", hp: 420, dmg: 260, skill: 10, type: "Military" },
+  { name: "MiG-31 Foxhound", hp: 500, dmg: 360, skill: 3, type: "Military" },
+  { name: "MiG-35", hp: 430, dmg: 320, skill: 1, type: "Military" },
+  { name: "Eurofighter Typhoon", hp: 460, dmg: 290, skill: 7, type: "Military" },
+  { name: "Dassault Rafale", hp: 450, dmg: 370, skill: 24, type: "Military" },
+  { name: "Saab JAS 39 Gripen", hp: 380, dmg: 350, skill: 21, type: "Military" },
+  { name: "B-2 Spirit", hp: 600, dmg: 180, skill: 2, type: "Military" },
+  { name: "B-52 Stratofortress", hp: 650, dmg: 160, skill: 8, type: "Military" },
+  { name: "A-10 Warthog", hp: 400, dmg: 280, skill: 6, type: "Military" },
+  { name: "SR-71 Blackbird", hp: 300, dmg: 200, skill: 9, type: "Military" },
+  { name: "東方巨龍", hp: 1000, dmg: 500, skill: 22, type: "Special" },
+  { name: "西方巨龍", hp: 1000, dmg: 500, skill: 23, type: "Special" },
+  { name: "Jet d'Normal", hp: 750, dmg: 450, skill: 17, type: "Special" },
+  { name: "Apophis", hp: 900, dmg: 490, skill: 17, type: "Special" },
+  { name: "Repair Kit", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — restore +120 HP & +80 Shield to one of your cards" },
+  { name: "Shield Bubble", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — grant +120 HP & +80 Shield (heavy defense)" },
+  { name: "Ammo Resupply", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — +120 HP & +80 Shield, resupply offense" },
+  { name: "Reinforcement Wing", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — reinforce a card with +120 HP & +80 Shield" },
+  { name: "Jammer Pulse", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Debuff — weaken + disarm an enemy (½ DMG 2 turns, no attack 1 turn)" },
+  { name: "EMP Burst", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Debuff — disable an enemy card (weaken + disarm)" },
+  { name: "Targeting Disruptor", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Debuff — scramble enemy targeting (weaken + disarm)" },
+  { name: "Missile Lock", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Ban — destroy one enemy card outright" },
+  { name: "Blackout Strike", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Ban — remove an enemy card from the field" },
+  { name: "Decoy Flare", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — +120 HP & +80 Shield plus Evasion" },
+  { name: "Overdrive", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Buff — +120 HP & +80 Shield, engine overdrive" },
+  { name: "Tactical Scramble", hp: 0, dmg: 0, skill: 0, type: "action", effect: "Debuff — weaken + disarm an enemy card" }
+];
+
+// Original placeholder defaults we replace with the sheet data (matched by name).
+const STALE_DEFAULT_NAMES = new Set([
+  "f-16 fighting falcon", "b-2 spirit", "su-57 felon", "f-22 raptor", "c-5 galaxy",
+  "a-10 warthog", "eurofighter typhoon", "b-52 stratofortress", "sr-71 blackbird",
+  "mig-29", "boost order", "emp burst"
+]);
+
+function rarityForCard(type, hp) {
+  if (type === "action") return "Rare";
+  if (type === "Special") return "Legendary";
+  if (type === "Military") return hp >= 500 ? "Legendary" : hp >= 450 ? "Mythic" : "Super Rare";
+  if (type === "Freighter") return hp >= 800 ? "Mythic" : hp >= 650 ? "Super Rare" : "Common";
+  if (hp >= 460) return "Mythic";
+  if (hp >= 380) return "Super Rare";
+  if (hp >= 280) return "Super Rare";
+  if (hp >= 190) return "Rare";
+  if (hp >= 150) return "Rare";
+  return "Common";
+}
+
+// Syncs the SHEET_CARDS into Firebase `admin/cards` (creation + update + stale
+// cleanup). Idempotent: only writes when a card is missing or its stats differ.
+async function ensureSheetCards() {
+  await loadCardCache();
+  const existing = cardCache || {};
+  const existingByName = {};
+  for (const id of Object.keys(existing)) {
+    const n = (existing[id].name || "").toLowerCase();
+    if (n) existingByName[n] = { id, card: existing[id] };
+  }
+  const sheetByName = {};
+  for (const c of SHEET_CARDS) sheetByName[(c.name || "").toLowerCase()] = c;
+  let writes = 0;
+  // Remove placeholder defaults that are no longer present in the sheet.
+  for (const id of Object.keys(existing)) {
+    const n = (existing[id].name || "").toLowerCase();
+    if (STALE_DEFAULT_NAMES.has(n) && !sheetByName[n]) {
+      await remove(ref(db, `admin/cards/${id}`));
+      writes++;
+      delete existingByName[n];
+    }
+  }
+  for (const c of SHEET_CARDS) {
+    const key = (c.name || "").toLowerCase();
+    const rarity = rarityForCard(c.type, c.hp);
+    const record = { name: c.name, hp: c.hp, dmg: c.dmg, skill: c.skill, type: c.type, rarity };
+    if (c.effect) record.effect = c.effect;
+    const cur = existingByName[key];
+    if (cur) {
+      const e = cur.card;
+      const same = Number(e.hp) === Number(c.hp) && Number(e.dmg) === Number(c.dmg) &&
+        Number(e.skill) === Number(c.skill) && (e.type || "plane") === c.type &&
+        (e.rarity || "") === rarity && (e.effect || "") === (c.effect || "");
+      if (!same) { await update(ref(db, `admin/cards/${cur.id}`), record); writes++; }
+    } else {
+      const cardRef = push(ref(db, "admin/cards"));
+      await set(cardRef, record);
+      writes++;
+    }
+  }
+  if (writes > 0) await loadCardCache();
+  debug(`✅ Sheet cards synced (${writes} write(s)).`);
+  return writes;
+}
+
+// Backwards-compatible alias for the old default-only seeder.
+async function createDefaultCards() { return ensureSheetCards(); }
+
+async function loadCardCache() {
+  const snap = await get(ref(db, 'admin/cards'));
+  if (snap.exists()) {
+    cardCache = snap.val();
+  } else {
+    cardCache = {};
+  }
+}
+
+// ============================================================
+// GAME ENGINE
+// ============================================================
+
+let gameListenerUnsub = null;
+
+// Board interactions are delegated and attached once.
+battlefield.addEventListener('click', onBattlefieldClick);
+
+function listenGame(roomId) {
+  const gameRef = ref(db, `games/${roomId}`);
+  gameListenerUnsub = onValue(gameRef, async (snap) => {
+    if (!snap.exists()) {
+      alert('Game was removed.');
+      if (gameListenerUnsub) { gameListenerUnsub(); gameListenerUnsub = null; }
+      leaveGame();
+      return;
+    }
+    gameData = snap.val();
+    // Trigger the AI BEFORE any rendering, so a render/upgrade error can never
+    // prevent the AI from taking its turn (which looked like "only me plays").
+    maybeRunAITurn();
+    try { await upgradeFieldData(roomId); } catch (e) { debug('⚠️ upgradeFieldData: ' + (e && e.message)); }
+    try { renderGame(); } catch (e) { debug('⚠️ renderGame: ' + (e && e.message)); }
+    try { updateTurnUI(); } catch (e) { debug('⚠️ updateTurnUI: ' + (e && e.message)); }
+    const mode = gameData.mode;
+    const playerCount = Object.keys(gameData.players).filter(pid => gameData.players[pid].isAlive).length;
+    if (mode === 'chaos' && playerCount >= 4 && gameData.status === 'waiting') {
+      await startChaosGame(roomId);
+    } else if ((mode === '5v5' || mode === '7v7') && playerCount === 2 && gameData.status === 'waiting') {
+      await startDuel(roomId);
+    }
+  });
+}
+
+async function upgradeFieldData(roomId) {
+  const players = gameData.players;
+  const updates = {};
+  for (const pid of Object.keys(players)) {
+    const field = normalizeField(players[pid].field);
+    let changed = false;
+    const newField = field.map(slot => {
+      if (slot && typeof slot === 'string') {
+        const card = cardCache[slot];
+        changed = true;
+        return card ? { cardId: slot, hp: card.hp, dmg: card.dmg, skill: card.skill } : null;
+      }
+      return slot;
+    });
+    if (changed) {
+      updates[`players/${pid}/field`] = newField;
+      gameData.players[pid].field = newField;
+    }
+  }
+  if (Object.keys(updates).length > 0) {
+    await update(ref(db, `games/${roomId}`), updates);
+  }
+}
+
+async function startChaosGame(roomId) {
+  const playerIds = Object.keys(gameData.players).filter(pid => gameData.players[pid].isAlive);
+  const shuffled = playerIds.sort(() => Math.random() - 0.5);
+  await update(ref(db, `games/${roomId}`), { status: 'active', turnOrder: shuffled, currentTurnIndex: 0 });
+  hideAdminPanel();
+}
+
+async function startDuel(roomId) {
+  await update(ref(db, `games/${roomId}`), { status: 'active', currentTurnIndex: 0 });
+  hideAdminPanel();
+}
+
+// Seed an AI player's deck with a RANDOM level (1-5) that is completely
+// independent of the human player's progress. Higher levels draw the
+// strongest planes; lower levels draw a random subset. AI always gets
+// cards to keep the match playable (this never touches the human's deck).
+async function seedAIPlayer(roomId, aiUid, aiSafe, mode) {
+  const caps = getModeCaps(mode);
+  await loadCardCache();
+  if (Object.keys(cardCache).length === 0) {
+    await createDefaultCards();
+    await loadCardCache();
+  }
+  const aiLevel = 1; // fixed at Lv.1 (weakest) — the AI no longer draws its best deck
+  // The two dragon cards are reserved for human players only — the AI must
+  // never hold 東方巨龍 / 西方巨龍 (fusion requires both, which the AI can't do).
+  const AI_BANNED_NAMES = ['東方巨龍', '西方巨龍'];
+  const allCards = Object.keys(cardCache)
+    .filter(id => !AI_BANNED_NAMES.includes(cardCache[id].name))
+    .map(id => ({
+    id, card: cardCache[id],
+    power: (Number(cardCache[id].hp) || 0) + (Number(cardCache[id].dmg) || 0)
+  }));
+  // ACTION CARDS: the AI only gets a couple (was every action card). This keeps
+  // its ban/debuff powers limited so it isn't overwhelming.
+  const aiActionCount = Math.min(caps.actionCap, 2);
+  const aiActions = shuffleArr(allCards.filter(c => (c.card.type || 'plane') === 'action')).slice(0, aiActionCount)
+    .map(c => ({ cardId: c.id, hp: c.card.hp, dmg: c.card.dmg, skill: c.card.skill }));
+  // PLANES: the AI is restricted to Common / Rare planes only. This removes the
+  // high-tier Military jets and the largest airliners (Super Rare+), so its
+  // cards are on par with what a new player can afford — fixing "AI too strong".
+  const AI_ALLOWED_RARITIES = ['common', 'rare'];
+  const planePool = allCards.filter(c =>
+    (c.card.type || 'plane') !== 'action' &&
+    AI_ALLOWED_RARITIES.includes((c.card.rarity || 'common').toLowerCase())
+  );
+  const aiPlaneCount = Math.min(caps.backupCap, planePool.length);
+  const chosen = shuffleArr(planePool).slice(0, aiPlaneCount);
+  const aiPlanes = chosen.map(c => ({ cardId: c.id, hp: c.card.hp, dmg: c.card.dmg, skill: c.card.skill }));
+  await update(ref(db, `games/${roomId}/players/${aiSafe}`), {
+    action: aiActions, backup: aiPlanes, field: [null, null, null, null, null], aiLevel
+  });
+  debug(`🤖 AI seeded (Lv.${aiLevel}).`);
+}
+
+// ============================================================
+// AI OPPONENT (auto-plays on its turn)
+// ============================================================
+let aiProcessing = false;
+
+function delay(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+// Called from the game listener whenever data changes. If it is an AI
+// player's turn and the game is active, kick off the AI routine (once).
+function maybeRunAITurn() {
+  if (!gameData || gameData.status !== 'active') return;
+  const turnOrder = gameData.turnOrder || [];
+  const currentId = turnOrder[gameData.currentTurnIndex || 0];
+  debug('🤖 maybeRunAITurn: current=' + (currentId || 'none') + ' aiProcessing=' + aiProcessing);
+  if (!currentId || !currentId.startsWith('ai_')) return;
+  if (aiProcessing) return;
+  aiProcessing = true;
+  const roomId = currentRoom;
+  debug("🤖 AI is taking its turn...");
+  setTimeout(() => processAITurn(roomId), 1000);
+}
+
+// Runs the AI's full turn: deploy a plane, attack once, then end turn.
+// Kept self-contained (not driven by the data listener) so re-entrant
+// onValue events can't cause the AI to double-act.
+async function processAITurn(roomId) {
+  // `aiProcessing` is already set true by maybeRunAITurn (which also guards
+  // against re-entry from the data listener). Do NOT re-check it here — that
+  // would make the AI bail immediately and never act. It is only cleared in
+  // the `finally` block below.
+  const turnOrder = gameData.turnOrder || [];
+  const currentId = turnOrder[gameData.currentTurnIndex || 0];
+  const safeAi = (currentId && currentId.startsWith('ai_')) ? sanitizeKey(currentId) : null;
+  if (!safeAi) { aiProcessing = false; return; }
+  aiProcessing = true;
+
+  // The turn is advanced in `finally` no matter what, so an error in any
+  // single step can never freeze the game on the AI (which looked like
+  // "the AI doesn't take turns"). Each risky step is also isolated so one
+  // failing step can't abort the others.
+  let shouldAdvance = false;
+  try {
+    const getRoom = () => get(ref(db, `games/${roomId}`));
+    let data = (await getRoom()).val();
+    if (!data || data.status !== 'active') return;
+    const aiData = data.players[safeAi];
+    if (!aiData || !aiData.isAlive) return;
+    shouldAdvance = true;
+
+    // Step 1: Deploy a plane from backup (or action) into an empty front slot.
+    data = (await getRoom()).val();
+    const ai = data.players[safeAi];
+    if (!ai) { debug("❌ AI player node missing – skipping turn."); return; }
+    // normalizeField pads a stripped/empty field back to 5 null slots, so the
+    // AI can always find a free slot (Firebase drops trailing nulls on write).
+    const field = normalizeField(ai.field);
+    const emptySlot = field.findIndex(s => s === null);
+    const backup = ai.backup || [];
+    if (emptySlot !== -1 && backup.length > 0) {
+      const newArr = [...backup];
+      newArr.splice(0, 1);
+      const newField = [...field];
+      const card = backup[0];
+      newField[emptySlot] = { cardId: card.cardId, hp: card.hp, dmg: card.dmg, skill: card.skill };
+      await update(ref(db, `games/${roomId}`), {
+        [`players/${safeAi}/backup`]: newArr,
+        [`players/${safeAi}/field`]: newField
+      });
+      debug("🤖 AI deployed a card.");
+      await delay(1200);
+    }
+
+    // Step 2: Use a card skill (isolated – a skill error won't skip the attack).
+    data = (await getRoom()).val();
+    if (data && data.status === 'active') {
+      try { await maybeUseAISkill(roomId, safeAi, data); }
+      catch (e) { debug("⚠️ AI skill error: " + (e && e.message)); }
+      await delay(1000);
+    }
+
+    // Step 3: Attack the first alive opponent with the first plane on field.
+    data = (await getRoom()).val();
+    if (data && data.status === 'active') {
+      const aiField = normalizeField(data.players[safeAi]?.field || []);
+      const attackerSlot = aiField.findIndex(s => s !== null && cardCache[s.cardId]?.type !== 'action');
+      const opponents = Object.keys(data.players)
+        .filter(pid => pid !== safeAi && data.players[pid].isAlive);
+      if (attackerSlot !== -1 && opponents.length > 0) {
+        // Weaker AI: sometimes holds its attack instead of striking every turn.
+        if (Math.random() < AI_ATTACK_SKIP_CHANCE) {
+          debug("🤖 AI holds its attack this turn.");
+        } else {
+          try {
+            debug("🤖 AI attacks.");
+            await executeAttack(safeAi, opponents[0], aiField[attackerSlot]);
+          } catch (e) { debug("⚠️ AI attack error: " + (e && e.message)); }
+        }
+        await delay(1200);
+      }
+    }
+
+    debug("🤖 AI ends its turn.");
+  } catch (err) {
+    debug("❌ AI turn error: " + (err && err.message));
+    console.error("AI turn error:", err);
+  } finally {
+    // Always pass the turn along and clear the flag.
+    if (shouldAdvance) {
+      try { await advanceTurn(safeAi); } catch (e) { debug("⚠️ AI advanceTurn error: " + (e && e.message)); }
+    }
+    aiProcessing = false;
+  }
+}
+
+// Skills grouped by who they target. Enemy skills need a live opponent card;
+// self skills only touch the AI's own board. Fusion (22/23) and None (0/19)
+// are skipped for the AI to avoid invalid/no-op plays and stray alerts.
+const AI_ENEMY_SKILLS = [1, 2, 3, 4, 13, 14, 15, 16, 17, 20, 24];
+const AI_SELF_SKILLS  = [5, 6, 7, 8, 9, 10, 11, 12, 18, 21, 25, 26, 27];
+// Chance the AI deliberately skips its attack on a given turn (makes it less
+// aggressive). Set to 0 to always attack.
+const AI_ATTACK_SKIP_CHANCE = 0.25;
+
+// Decide whether the AI uses a card skill this turn, then use one. The chance
+// scales with aiLevel (Lv.1 ~35%, Lv.5 ~95%), so level meaningfully changes how
+// often the AI "plays" its cards' skills.
+async function maybeUseAISkill(roomId, safeAi, data) {
+  const aiPlayer = data.players[safeAi];
+  if (!aiPlayer) return;
+  const aiLevel = Number(aiPlayer.aiLevel) || 1;
+  // Lower skill usage than before: Lv.1 ~14%, Lv.2 ~26% (was up to 95% / 44%).
+  const useChance = Math.min(0.35, 0.05 + aiLevel * 0.10);
+  if (Math.random() > useChance) return;
+
+  const field = normalizeField(aiPlayer.field);
+  // Candidate planes: on field, not an Action card, with a real skill.
+  const candidates = [];
+  field.forEach((s, idx) => {
+    if (!s) return;
+    if (cardCache[s.cardId]?.type === 'action') return;
+    const skill = Number(s.skill) || 0;
+    if (skill === 0 || skill === 19) return;
+    if (skill === 22 || skill === 23) return; // fusion needs both dragons
+    candidates.push({ slotIdx: idx, cardObj: s, skill });
+  });
+  if (candidates.length === 0) return;
+
+  const opponents = Object.keys(data.players)
+    .filter(pid => pid !== safeAi && data.players[pid].isAlive);
+
+  // Prefer offensive skills when an opponent has cards to hit; otherwise fall
+  // back to self-buff/heal skills.
+  const enemyHasCards = opponents.some(pid => normalizeField(data.players[pid].field).some(s => s !== null));
+  let pick = null;
+  if (enemyHasCards) pick = candidates.find(c => AI_ENEMY_SKILLS.includes(c.skill));
+  if (!pick) pick = candidates.find(c => AI_SELF_SKILLS.includes(c.skill));
+  if (!pick) pick = candidates[0];
+
+  const isEnemySkill = AI_ENEMY_SKILLS.includes(pick.skill);
+  let targetPid;
+  if (isEnemySkill) {
+    targetPid = opponents.find(pid => normalizeField(data.players[pid].field).some(s => s !== null)) || opponents[0];
+    if (!targetPid) return; // no valid enemy target
+  } else {
+    // Self skills only modify the AI's own field; targetPid is unused but the
+    // shared executeSkill signature still needs one, so use itself.
+    targetPid = safeAi;
+  }
+
+  debug(`🤖 AI uses skill #${pick.skill}.`);
+  // executeSkill reads currentRoom (same room the AI runs in) and re-fetches
+  // the latest state itself, so it is safe to call here.
+  await executeSkill(safeAi, targetPid, pick.cardObj, pick.slotIdx);
+}
+
+function renderGame() {
+  if (!gameData) {
+    battlefield.innerHTML = '<p style="color:#888;">Waiting for game data...</p>';
+    return;
+  }
+  window.__lastGameData = gameData; // for the admin Debug Panel
+  const players = gameData.players;
+  const mySafeId = sanitizeKey(currentUser.uid);
+  battlefield.innerHTML = '';
+  const playerIds = Object.keys(players).filter(pid => players[pid].isAlive);
+  if (playerIds.length === 0) {
+    battlefield.innerHTML = '<p style="color:#888;">No players in this game.</p>';
+    return;
+  }
+
+  const slotHtml = (card, pid, area, idx) => {
+    const isField = area === 'field';
+    if (isField && card === null) {
+      return `<div class="card-slot" data-player="${escapeHtml(pid)}" data-source="field" data-index="${idx}" data-empty="1">
+        <span style="color:#888;font-size:0.8rem;">Front ${idx + 1} ${idx === 0 ? '<span class="front-line-badge">⚡ Front</span>' : ''}</span></div>`;
+    }
+    if (!card) return '';
+    const type = cardCache[card.cardId]?.type || 'plane';
+    const rarityCls = cardCache[card.cardId]?.rarity ? 'rarity-' + cardCache[card.cardId].rarity.toLowerCase().replace(' ', '') : '';
+    const sel = selection && (
+      (selection.kind === 'attacker' && area === 'field' && selection.index === idx && pid === mySafeId) ||
+      (selection.kind === 'deploy' && area === selection.source && selection.index === idx && pid === mySafeId) ||
+      (selection.kind === 'action' && area === 'action' && selection.index === idx && pid === mySafeId)
+    ) ? ' selected-slot' : '';
+    const sp = [];
+    if (card.shield) sp.push(`🛡️${card.shield}`);
+    if (card.evasion) sp.push('💨');
+    if (card.counterstrike) sp.push('↩️');
+    if (card.phantom) sp.push('👻');
+    if (card.debuffTurns && Object.keys(card.debuffTurns).length) sp.push('☠️');
+    if (type === 'action' && isField) sp.push('🚫');
+    const statusHtml = sp.length ? `<div style="font-size:0.6rem;color:#c0392b;margin-top:2px;">${sp.join(' ')}</div>` : '';
+    const name = escapeHtml(cardCache[card.cardId]?.name || 'Unknown');
+    // Small AI-generated artwork, shown only on the battlefield (kept compact
+    // via the .card-img class so it never dominates the slot).
+    const art = cardArtUrl(card.cardId);
+    const artHtml = (isField && art)
+      ? `<img class="card-img" src="${escapeHtml(art)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
+    if (isField) {
+      return `<div class="card-slot has-card ${rarityCls}${sel}" data-player="${escapeHtml(pid)}" data-source="field" data-index="${idx}">
+        ${artHtml}<div class="card-info"><span class="card-name">${name} ${idx === 0 ? '<span class="front-line-badge">⚡ Front</span>' : ''}</span>
+        <span>❤️ ${card.hp}</span><span>⚔️ ${card.dmg}</span>
+        ${type === 'action' ? '<span style="font-size:0.7rem;">🎴 Action</span>' : `<span style="font-size:0.7rem;">#${card.skill}</span>`}
+        ${statusHtml}</div></div>`;
+    }
+    const used = type === 'action' && card.used;
+    return `<div class="card-slot has-card ${rarityCls}${sel}" data-player="${escapeHtml(pid)}" data-source="${area}" data-index="${idx}" data-used="${used ? '1' : '0'}">
+      <div class="card-info"><span class="card-name">${name}${type === 'action' ? ' 🎴' : ''}</span>
+      <span>❤️ ${card.hp}</span><span>⚔️ ${card.dmg}</span>
+      ${type === 'action' ? '<span style="font-size:0.7rem;">Action</span>' : `<span style="font-size:0.7rem;">#${card.skill}</span>`}
+      ${used ? '<span style="font-size:0.7rem;color:#c0392b;">USED</span>' : ''}${statusHtml}</div></div>`;
+  };
+
+  const rowHtml = (p, pid, title, area, arr, isField) => {
+    const cards = arr.map((c, i) => slotHtml(c, pid, area, i)).join('');
+    return `<div class="row-block"><div class="row-label">${title}</div><div class="card-slots">${cards || '<span style="color:#888;font-size:0.8rem;">— empty —</span>'}</div></div>`;
+  };
+
+  // Opponents: ① Action, ② Backup, ③ Front
+  for (const pid of playerIds) {
+    if (pid === mySafeId) continue;
+    const p = players[pid];
+    const isAI = pid.startsWith('ai_');
+    const aiLabel = isAI ? `🤖 AI${p.aiLevel ? ' (Lv.' + p.aiLevel + ')' : ''}` : '👤 Opponent ' + escapeHtml(pid.slice(0, 4));
+    const header = `<div class="zone-header">${aiLabel} <span style="font-size:0.8rem;background:rgba(0,0,0,0.05);padding:2px 10px;border-radius:20px;">💰 ${p.currency || 0}</span></div>`;
+    const body = rowHtml(p, pid, '① Action', 'action', p.action || [], false)
+      + rowHtml(p, pid, '② Backup', 'backup', p.backup || [], false)
+      + rowHtml(p, pid, '③ Front', 'field', normalizeField(p.field), true);
+    battlefield.insertAdjacentHTML('beforeend', `<div class="player-zone opponent-zone">${header}${body}</div>`);
+  }
+
+  // You: ④ Front, ⑤ Backup, ⑥ Action
+  const my = players[mySafeId];
+  if (my) {
+    const header = `<div class="zone-header">🛩️ You <span style="font-size:0.8rem;background:rgba(0,0,0,0.05);padding:2px 10px;border-radius:20px;">💰 ${my.currency || 0}</span></div>`;
+    const body = rowHtml(my, mySafeId, '④ Front', 'field', normalizeField(my.field), true)
+      + rowHtml(my, mySafeId, '⑤ Backup', 'backup', my.backup || [], false)
+      + rowHtml(my, mySafeId, '⑥ Action', 'action', my.action || [], false);
+    battlefield.insertAdjacentHTML('beforeend', `<div class="player-zone you-zone">${header}${body}</div>`);
+  }
+
+  handArea.innerHTML = '<span style="color:#888;font-size:0.85rem;">Tap a card in ⑤ Backup or ⑥ Action to deploy it to ④ Front. Tap a front-line plane, then Attack / Use Skill.</span>';
+  gameModeDisplay.textContent = `Mode: ${gameData.mode} (${gameData.status})`;
+}
+
+// ---- Board click handling (delegated) ----
+function onBattlefieldClick(e) {
+  if (!isMyTurn) return;
+  const slotEl = e.target.closest('.card-slot');
+  if (!slotEl) return;
+  const pid = slotEl.dataset.player;
+  const mySafeId = sanitizeKey(currentUser.uid);
+  if (pid !== mySafeId) return;
+  const source = slotEl.dataset.source;
+  const index = parseInt(slotEl.dataset.index, 10);
+  if (source === 'field') {
+    if (slotEl.dataset.empty === '1') {
+      if (selection && selection.kind === 'deploy') deployCard(selection, index);
+      return;
+    }
+    selection = { kind: 'attacker', source: 'field', index };
+    renderGame();
+  } else if (source === 'backup') {
+    selection = { kind: 'deploy', source: 'backup', index };
+    renderGame();
+  } else if (source === 'action') {
+    if (slotEl.dataset.used === '1') return;
+    selection = { kind: 'action', source: 'action', index };
+    showActionEffects(index);
+  }
+}
+
+async function deployCard(sel, fieldIndex) {
+  const mySafeId = sanitizeKey(currentUser.uid);
+  const myData = gameData.players[mySafeId];
+  if (!myData) return;
+  const field = normalizeField(myData.field);
+  if (fieldIndex < 0 || fieldIndex >= field.length) return;
+  if (field[fieldIndex] !== null) return alert('That front-line slot is occupied.');
+  const arr = sel.source === 'backup' ? (myData.backup || []) : (myData.action || []);
+  const card = arr[sel.index];
+  if (!card) return;
+  const newArr = [...arr];
+  newArr.splice(sel.index, 1);
+  const newField = [...field];
+  const deployed = { cardId: card.cardId, hp: card.hp, dmg: card.dmg, skill: card.skill };
+  newField[fieldIndex] = deployed;
+  const updates = {
+    [`players/${mySafeId}/field`]: newField,
+    [`players/${mySafeId}/${sel.source}`]: newArr
+  };
+  // Track dragon ownership in globalDragons so Dragon Fusion (skills 22/23)
+  // can verify both dragons belong to the same player. Names are Chinese.
+  const dName = cardCache[card.cardId]?.name || '';
+  if (dName === '東方巨龍' || dName === '西方巨龍') {
+    const gdSnap = await get(ref(db, `games/${currentRoom}`));
+    const gd = (gdSnap.exists() && gdSnap.val().globalDragons) || { eastOwner: null, westOwner: null };
+    if (dName === '東方巨龍') gd.eastOwner = mySafeId;
+    if (dName === '西方巨龍') gd.westOwner = mySafeId;
+    updates['globalDragons'] = gd;
+  }
+  await update(ref(db, `games/${currentRoom}`), updates);
+  selection = null;
+  await endMyTurnAfterAction(); // deploying counts as one turn
+}
+
+function showActionEffects(actionIndex) {
+  targetSelector.style.display = 'block';
+  targetSelector.innerHTML = '<p>Action card effect (single-use):</p>';
+  const mySafeId = sanitizeKey(currentUser.uid);
+  const myData = gameData.players[mySafeId];
+
+  const buff = document.createElement('button');
+  buff.textContent = '🟢 Buff (own card: +120 HP, +80 shield)';
+  buff.addEventListener('click', () => {
+    const items = [];
+    normalizeField(myData.field).forEach((c, i) => { if (c) items.push({ label: `Front #${i + 1} ${cardCache[c.cardId]?.name || ''}`, value: { area: 'field', index: i } }); });
+    (myData.backup || []).forEach((c, i) => { items.push({ label: `Backup ${cardCache[c.cardId]?.name || ''}`, value: { area: 'backup', index: i } }); });
+    if (!items.length) return alert('You have no cards to buff.');
+    showTargetSelector('Buff which card?', items, t => applyActionEffect('buff', actionIndex, mySafeId, t.value));
+  });
+
+  const debuff = document.createElement('button');
+  debuff.textContent = '🔴 Debuff (enemy card: weaken + disarm)';
+  debuff.addEventListener('click', () => {
+    const items = [];
+    const opps = Object.keys(gameData.players).filter(pid => pid !== mySafeId && gameData.players[pid].isAlive);
+    opps.forEach(pid => {
+      const p = gameData.players[pid];
+      normalizeField(p.field).forEach((c, i) => { if (c && cardCache[c.cardId]?.type !== 'action') items.push({ label: `${pid.startsWith('ai_') ? 'AI' : pid.slice(0, 4)} Front #${i + 1} ${cardCache[c.cardId]?.name || ''}`, value: { pid, area: 'field', index: i } }); });
+      (p.backup || []).forEach((c, i) => { items.push({ label: `${pid.startsWith('ai_') ? 'AI' : pid.slice(0, 4)} Backup ${cardCache[c.cardId]?.name || ''}`, value: { pid, area: 'backup', index: i } }); });
+    });
+    if (!items.length) return alert('No enemy cards to debuff.');
+    showTargetSelector('Debuff which card?', items, t => applyActionEffect('debuff', actionIndex, mySafeId, t.value));
+  });
+
+  const ban = document.createElement('button');
+  ban.textContent = '⛔ Ban (remove enemy card)';
+  ban.addEventListener('click', () => {
+    const items = [];
+    const opps = Object.keys(gameData.players).filter(pid => pid !== mySafeId && gameData.players[pid].isAlive);
+    opps.forEach(pid => {
+      const p = gameData.players[pid];
+      normalizeField(p.field).forEach((c, i) => { if (c) items.push({ label: `${pid.startsWith('ai_') ? 'AI' : pid.slice(0, 4)} Front #${i + 1} ${cardCache[c.cardId]?.name || ''}`, value: { pid, area: 'field', index: i } }); });
+      (p.backup || []).forEach((c, i) => { items.push({ label: `${pid.startsWith('ai_') ? 'AI' : pid.slice(0, 4)} Backup ${cardCache[c.cardId]?.name || ''}`, value: { pid, area: 'backup', index: i } }); });
+    });
+    if (!items.length) return alert('No enemy cards to ban.');
+    showTargetSelector('Ban which card?', items, t => applyActionEffect('ban', actionIndex, mySafeId, t.value));
+  });
+
+  targetSelector.appendChild(buff);
+  targetSelector.appendChild(debuff);
+  targetSelector.appendChild(ban);
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel';
+  cancel.style.background = '#b03a3a';
+  cancel.style.color = 'white';
+  cancel.addEventListener('click', () => { targetSelector.style.display = 'none'; selection = null; });
+  targetSelector.appendChild(cancel);
+}
+
+async function applyActionEffect(effect, actionIndex, mySafeId, ref) {
+  const roomRef = ref(db, `games/${currentRoom}`);
+  const snap = await get(roomRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const myData = data.players[mySafeId];
+  const actionArr = [...(myData.action || [])];
+  if (actionIndex < 0 || actionIndex >= actionArr.length) return;
+  actionArr.splice(actionIndex, 1); // action cards are single-use: consumed once per battle
+  const updates = { [`players/${mySafeId}/action`]: actionArr };
+
+  if (effect === 'buff') {
+    const c = ref.area === 'field' ? data.players[mySafeId].field[ref.index] : data.players[mySafeId].backup[ref.index];
+    if (c) { c.hp = (Number(c.hp) || 0) + 120; if (!c.shield) c.shield = 80; }
+    updates[`players/${mySafeId}/${ref.area}`] = data.players[mySafeId][ref.area];
+  } else {
+    const pid = ref.pid;
+    const targetArr = ref.area === 'field' ? data.players[pid].field : data.players[pid].backup;
+    const c = targetArr[ref.index];
+    if (c) {
+      if (effect === 'debuff') { if (!c.debuffTurns) c.debuffTurns = {}; c.debuffTurns.weaken = 2; c.debuffTurns.disarm = 1; }
+      else if (effect === 'ban') { targetArr[ref.index] = null; }
+    }
+    updates[`players/${pid}/${ref.area}`] = targetArr;
+  }
+  await update(roomRef, updates);
+  selection = null;
+  await checkWinCondition(roomRef);
+  await endMyTurnAfterAction(); // using an action-card effect counts as one turn
+}
+
+function updateTurnUI() {
+  if (!gameData) return;
+  updateToggleButtons();
+  if (inBattle()) {
+    // Ensure Shop/Admin panels are closed once the battle is live.
+    if (shopPanel) { shopPanel.classList.remove('active'); shopPanel.style.display = 'none'; }
+    if (adminPanel) { adminPanel.classList.remove('active'); adminPanel.style.display = 'none'; }
+  }
+  const turnOrder = gameData.turnOrder || [];
+  const currentIdx = gameData.currentTurnIndex || 0;
+  const currentId = turnOrder[currentIdx];
+  const status = gameData.status;
+  const turnKey = status + '|' + currentId;
+  if (turnKey !== lastTurnKey) { lastTurnKey = turnKey; selection = null; }
+  if (status === 'finished') {
+    turnIndicator.textContent = '🏁 Game Over';
+    document.querySelectorAll('#turnActions button').forEach(b => b.disabled = true);
+    return;
+  }
+  const myId = currentUser.uid;
+  isMyTurn = (currentId === myId && status === 'active');
+  if (isMyTurn) {
+    turnIndicator.textContent = '🎯 Your turn!';
+  } else {
+    const name = currentId ? (currentId.startsWith('ai_') ? '🤖 AI' : currentId.slice(0,6)) : '...';
+    turnIndicator.textContent = `⏳ ${name}'s turn`;
+  }
+  document.getElementById('playCardBtn').disabled = !isMyTurn;
+  document.getElementById('attackBtn').disabled = !isMyTurn;
+  document.getElementById('useSkillBtn').disabled = !isMyTurn;
+  // Turns auto-end after an action; manual skip is no longer allowed.
+  document.getElementById('endTurnBtn').disabled = true;
+  targetSelector.style.display = 'none';
+}
+
+// ----- ADVANCE / END TURN -----
+// Shared logic used by both the human (End Turn button) and the AI.
+async function advanceTurn(actingPid) {
+  const gameRef = ref(db, `games/${currentRoom}`);
+  const data = (await get(gameRef)).val();
+  if (!data) return;
+  const turnOrder = data.turnOrder || [];
+  let nextIndex = (data.currentTurnIndex + 1) % turnOrder.length;
+  let attempts = 0, found = false;
+  while (attempts < turnOrder.length) {
+    const pid = turnOrder[nextIndex];
+    if (data.players[pid] && data.players[pid].isAlive) { found = true; break; }
+    nextIndex = (nextIndex + 1) % turnOrder.length;
+    attempts++;
+  }
+  if (!found) { await update(gameRef, { status: 'finished' }); return; }
+  await update(gameRef, { currentTurnIndex: nextIndex });
+  await applyDebuffTick(gameRef, turnOrder[nextIndex]);
+  await checkWinCondition(gameRef);
+}
+
+// Any active action by the human (deploy / attack / skill / action-card
+// effect) immediately ends their turn. Players can no longer pass/skip.
+async function endMyTurnAfterAction() {
+  if (!isMyTurn || !currentRoom || !gameData || gameData.status !== 'active') return;
+  await advanceTurn(sanitizeKey(currentUser.uid));
+}
+
+// Players can no longer skip/pass their turn. The End Turn button is disabled;
+// turns end automatically after any active action (see endMyTurnAfterAction).
+document.getElementById('endTurnBtn').addEventListener('click', () => {
+  // Intentionally a no-op: skipping turns is no longer allowed.
+});
+
+// ----- DEPLOY (auto to first empty front slot) -----
+document.getElementById('playCardBtn').addEventListener('click', async () => {
+  if (!isMyTurn || !currentRoom) return;
+  if (!selection || selection.kind !== 'deploy') return alert('Select a card from your ⑤ Backup or ⑥ Action row to deploy.');
+  const mySafeId = sanitizeKey(currentUser.uid);
+  const myData = gameData.players[mySafeId];
+  if (!myData) return;
+  const field = normalizeField(myData.field);
+  const emptySlot = field.findIndex(s => s === null);
+  if (emptySlot === -1) return alert('Your front line is full (max 5).');
+  await deployCard(selection, emptySlot);
+});
+
+// ----- ATTACK -----
+document.getElementById('attackBtn').addEventListener('click', async () => {
+  if (!isMyTurn || !currentRoom) return;
+  if (!selection || selection.kind !== 'attacker') return alert('Select one of your front-line planes first.');
+  const mySafeId = sanitizeKey(currentUser.uid);
+  const myData = gameData.players[mySafeId];
+  const attacker = myData.field[selection.index];
+  if (!attacker) return;
+  if (cardCache[attacker.cardId]?.type === 'action') return alert('Action cards cannot attack.');
+  const opponents = Object.keys(gameData.players).filter(pid => pid !== mySafeId && gameData.players[pid].isAlive);
+  if (opponents.length === 0) return alert('No opponents alive.');
+  if (opponents.length === 1) {
+    executeAttack(mySafeId, opponents[0], attacker);
+  } else {
+    showTargetSelector('Attack which opponent?',
+      opponents.map(pid => ({ label: pid.startsWith('ai_') ? '🤖 AI' : 'Opponent ' + pid.slice(0, 4), value: pid })),
+      t => executeAttack(mySafeId, t.value, attacker));
+  }
+});
+
+function showTargetSelector(title, items, onPick) {
+  targetSelector.style.display = 'block';
+  targetSelector.innerHTML = `<p>${escapeHtml(title)}</p>`;
+  items.forEach(it => {
+    const btn = document.createElement('button');
+    btn.textContent = it.label;
+    btn.addEventListener('click', () => { targetSelector.style.display = 'none'; onPick(it); });
+    targetSelector.appendChild(btn);
+  });
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel';
+  cancel.style.background = '#b03a3a';
+  cancel.style.color = 'white';
+  cancel.addEventListener('click', () => { targetSelector.style.display = 'none'; selection = null; });
+  targetSelector.appendChild(cancel);
+}
+
+async function executeAttack(attackerPid, targetPid, attackerObj) {
+  if (cardCache[attackerObj.cardId]?.type === 'action') {
+    alert('Action cards cannot attack.');
+    return;
+  }
+  const roomRef = ref(db, `games/${currentRoom}`);
+  const snap = await get(roomRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const attackerField = normalizeField(data.players[attackerPid]?.field);
+  const targetField = normalizeField(data.players[targetPid]?.field);
+  const targetSlot = targetField.findIndex(s => s !== null && cardCache[s.cardId]?.type !== 'action');
+  if (targetSlot === -1) {
+    alert('Target has no attackable planes (action cards cannot be attacked).');
+    return;
+  }
+  const target = targetField[targetSlot];
+
+  // Locate the attacker's attacking plane (first non-null slot).
+  const attackerSlot = attackerField.findIndex(s => s !== null);
+  const attackerPlane = attackerSlot !== -1 ? attackerField[attackerSlot] : null;
+
+  // Disarm debuff: this plane cannot attack this turn.
+  if (attackerPlane?.debuffTurns?.disarm) {
+    alert('Your attacking plane is disarmed and cannot attack!');
+    return;
+  }
+
+  // Effective damage (Weaken halves it).
+  let dmg = Number(attackerObj.dmg) || 0;
+  if (attackerPlane?.debuffTurns?.weaken) dmg = Math.round(dmg * 0.5);
+
+  if (target.phantom) {
+    debug('👻 Phantom plane ignored the attack.');
+  } else if (target.evasion) {
+    // Evasion: attack misses and the buff is consumed.
+    target.evasion = false;
+    debug('💨 Attack evaded!');
+  } else {
+    // Shield absorbs damage first, then HP.
+    if (target.shield && target.shield > 0) {
+      const absorbed = Math.min(target.shield, dmg);
+      target.shield -= absorbed;
+      dmg -= absorbed;
+      if (target.shield <= 0) target.shield = 0;
+    }
+    const newHp = (Number(target.hp) || 0) - dmg;
+    if (newHp <= 0) {
+      targetField[targetSlot] = null;
+    } else {
+      targetField[targetSlot].hp = newHp;
+    }
+  }
+
+  // Counterstrike: reflect damage back to the attacker's plane.
+  if (target.counterstrike && attackerPlane) {
+    const counter = 100;
+    const aNewHp = (Number(attackerPlane.hp) || 0) - counter;
+    if (aNewHp <= 0) attackerField[attackerSlot] = null;
+    else attackerPlane.hp = aNewHp;
+  }
+
+  const updates = { [`players/${targetPid}/field`]: targetField };
+  if (attackerPlane) updates[`players/${attackerPid}/field`] = attackerField;
+  await update(roomRef, updates);
+  await checkWinCondition(roomRef);
+  await endMyTurnAfterAction(); // attacking counts as one turn
+}
+
+// ----- USE SKILL -----
+document.getElementById('useSkillBtn').addEventListener('click', async () => {
+  if (!isMyTurn || !currentRoom) return;
+  if (!selection || selection.kind !== 'attacker') return alert('Select one of your front-line planes first.');
+  const mySafeId = sanitizeKey(currentUser.uid);
+  const myData = gameData.players[mySafeId];
+  const cardObj = myData.field[selection.index];
+  if (!cardObj) return;
+  if (cardCache[cardObj.cardId]?.type === 'action') return alert('Action cards cannot use skills.');
+  const opponents = Object.keys(gameData.players).filter(pid => pid !== mySafeId && gameData.players[pid].isAlive);
+  if (opponents.length === 0) return alert('No opponents alive.');
+  if (opponents.length === 1) {
+    executeSkill(mySafeId, opponents[0], cardObj, selection.index);
+  } else {
+    showTargetSelector('Use skill on which opponent?',
+      opponents.map(pid => ({ label: pid.startsWith('ai_') ? '🤖 AI' : 'Opponent ' + pid.slice(0, 4), value: pid })),
+      t => executeSkill(mySafeId, t.value, cardObj, selection.index));
+  }
+});
+
+async function executeSkillOnTarget(attackerPid, targetPid, payload) {
+  await executeSkill(attackerPid, targetPid, payload.cardObj, payload.slotIdx);
+}
+
+async function executeSkill(attackerPid, targetPid, cardObj, slotIdx) {
+  if (cardCache[cardObj.cardId]?.type === 'action') {
+    alert('Action cards cannot use skills.');
+    return;
+  }
+  const roomRef = ref(db, `games/${currentRoom}`);
+  const snap = await get(roomRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const skillId = cardObj.skill;
+  // Normalize to 5-slot arrays: Firebase may store a gappy field as a sparse
+  // object, and raw .map/.findIndex/.forEach on it throws "X is not a function".
+  // This also unblocks the AI, which otherwise crashed mid-skill and got stuck.
+  const myField = normalizeField(data.players[attackerPid].field);
+  const targetField = normalizeField(data.players[targetPid].field);
+  // The chosen slot may have been destroyed between selection and execution
+  // (e.g. another card killed it). Bail out rather than dereferencing null.
+  if (!myField[slotIdx]) {
+    debug('🤖 Skill target no longer on field – skipping skill.');
+    return;
+  }
+
+  switch(skillId) {
+    case 1: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].hp -= 120; if (targetField[t].hp <= 0) targetField[t] = null; } break; }
+    case 2: { targetField.forEach((s,i) => { if (s) { s.hp -= 80; if (s.hp <= 0) targetField[i] = null; } }); break; }
+    case 3: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].hp -= 200; if (targetField[t].hp <= 0) targetField[t] = null; } break; }
+    case 4: { let h=0; for (let i=0; i<targetField.length && h<2; i++) { if (targetField[i]) { targetField[i].hp -= 100; if (targetField[i].hp <= 0) targetField[i] = null; h++; } } break; }
+    case 5: { myField[slotIdx].hp += 150; break; }
+    case 6: { myField[slotIdx].hp += 80; break; }
+    case 7: { if (!myField[slotIdx].shield) myField[slotIdx].shield = 120; break; }
+    case 8: { myField.forEach(s => { if (s) s.hp += 80; }); break; }
+    case 9: { myField[slotIdx].dmg += 100; break; }
+    case 10: { myField[slotIdx].hp += 80; break; }
+    case 11: { myField.forEach(s => { if (s) s.dmg += 60; }); break; }
+    case 12: { myField[slotIdx].dmg = Math.min(myField[slotIdx].dmg * 2, 1500); myField[slotIdx].hp -= 50; if (myField[slotIdx].hp <= 0) myField[slotIdx] = null; break; }
+    case 13: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].dmg -= 80; if (!targetField[t].debuffTurns) targetField[t].debuffTurns = {}; targetField[t].debuffTurns.weaken = 2; } break; }
+    case 14: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].hp -= 100; if (targetField[t].hp <= 0) targetField[t] = null; else { if (!targetField[t].debuffTurns) targetField[t].debuffTurns = {}; targetField[t].debuffTurns.corrosion = 2; } } break; }
+    case 15: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { if (!targetField[t].debuffTurns) targetField[t].debuffTurns = {}; targetField[t].debuffTurns.disarm = 1; } break; }
+    case 16: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].hp -= 60; targetField[t].dmg -= 40; if (targetField[t].hp <= 0) targetField[t] = null; else { if (!targetField[t].debuffTurns) targetField[t].debuffTurns = {}; targetField[t].debuffTurns.meltdown = 2; } } break; }
+    case 17: { const myS = slotIdx; const oppS = targetField.findIndex(s => s !== null); if (oppS !== -1) { const temp = myField[myS]; myField[myS] = targetField[oppS]; targetField[oppS] = temp; } break; }
+    case 18: { const card = myField[slotIdx]; myField[slotIdx] = null; const backup = data.players[attackerPid].backup || []; backup.push({ cardId: card.cardId, hp: card.hp, dmg: card.dmg, skill: card.skill }); await update(roomRef, { [`players/${attackerPid}/backup`]: backup, [`players/${attackerPid}/field`]: myField }); await endMyTurnAfterAction(); return; }
+    case 19: { break; }
+    case 20: { const valid = targetField.map((s,i) => s !== null ? i : -1).filter(i => i>=0); if (valid.length > 0) { const r = valid[Math.floor(Math.random() * valid.length)]; targetField[r] = null; } break; }
+    case 21: { myField[slotIdx].evasion = true; break; }
+    case 22: case 23: {
+      const eastId = data.globalDragons?.eastOwner;
+      const westId = data.globalDragons?.westOwner;
+      if (eastId !== attackerPid || westId !== attackerPid) { alert('You need both dragons to fuse.'); return; }
+      let eIdx = -1, wIdx = -1;
+      myField.forEach((s, i) => {
+        if (s && cardCache[s.cardId]?.name === '東方巨龍') eIdx = i;
+        if (s && cardCache[s.cardId]?.name === '西方巨龍') wIdx = i;
+      });
+      if (eIdx === -1 || wIdx === -1) { alert('Both dragons must be on field.'); return; }
+      myField[eIdx] = { cardId: 'fused_dragon', hp: 1500, dmg: 1000, skill: 0 };
+      myField[wIdx] = null;
+      await update(roomRef, { [`players/${attackerPid}/field`]: myField, 'globalDragons/eastOwner': null, 'globalDragons/westOwner': null });
+      await endMyTurnAfterAction();
+      return;
+    }
+    case 24: { const t = targetField.findIndex(s => s !== null); if (t!==-1) { targetField[t].hp -= 250; if (targetField[t].hp <= 0) targetField[t] = null; myField[slotIdx].hp -= 80; if (myField[slotIdx].hp <= 0) myField[slotIdx] = null; } break; }
+    case 25: { myField[slotIdx].counterstrike = true; break; }
+    case 26: { myField[slotIdx].phantom = true; break; }
+    case 27: { if (myField.length > 1) { const other = myField.findIndex((s, i) => s !== null && i !== slotIdx); if (other !== -1) { myField[other] = null; myField[slotIdx].hp += 250; } } break; }
+    default: alert('Unknown skill.'); return;
+  }
+
+  await update(roomRef, {
+    [`players/${attackerPid}/field`]: myField,
+    [`players/${targetPid}/field`]: targetField
+  });
+  await checkWinCondition(roomRef);
+  await endMyTurnAfterAction(); // using a skill counts as one turn
+}
+
+// ----- CHECK WIN CONDITION -----
+// A player is eliminated only when front line AND action AND backup are all empty.
+async function checkWinCondition(roomRef) {
+  const snap = await get(roomRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const players = data.players;
+  const alive = Object.keys(players).filter(pid => players[pid].isAlive);
+  let eliminated = [];
+  for (const pid of alive) {
+    const p = players[pid];
+    const field = normalizeField(p.field);
+    const action = p.action || [];
+    const backup = p.backup || [];
+    const hasCards = field.some(s => s !== null) || action.length > 0 || backup.length > 0;
+    if (!hasCards) eliminated.push(pid);
+  }
+  if (eliminated.length > 0) {
+    const roomId = roomRef.key;
+    const isChaos = data.mode === 'chaos';
+    for (const pid of eliminated) {
+      await update(roomRef, { [`players/${pid}/isAlive`]: false });
+      // Chaos Dungeon "spews out prizes" when a player is knocked out — the
+      // eliminated player still walks away with a consolation prize (up to 250).
+      if (isChaos && !pid.startsWith('ai_')) {
+        const prize = randInt(20, CHAOS_PRIZE_MAX);
+        await awardCurrency(sanitizeKey(pid), prize, 'Chaos elimination prize');
+      }
+    }
+    const updated = (await get(roomRef)).val();
+    const remaining = Object.keys(updated.players).filter(pid => updated.players[pid].isAlive);
+    if (remaining.length <= 1) {
+      await update(roomRef, { status: 'finished' });
+      const winner = remaining[0] || 'None';
+      alert(`🏆 ${winner.startsWith('ai_') ? 'AI' : 'Player ' + winner.slice(0,6)} wins!`);
+      // Award win rewards only when a real (non-AI) player wins.
+      if (winner !== 'None' && !winner.startsWith('ai_')) {
+        const humanOpponents = Object.keys(updated.players)
+          .filter(pid => pid !== winner && !pid.startsWith('ai_')).length;
+        const aiOpponents = Object.keys(updated.players)
+          .filter(pid => pid !== winner && pid.startsWith('ai_')).length;
+        let reward;
+        if (humanOpponents > 0) {
+          reward = randInt(REWARD_VS_PLAYER[0], REWARD_VS_PLAYER[1]);
+          debug(`🏆 Win vs player → +${reward} SDC`);
+        } else if (aiOpponents > 0) {
+          reward = randInt(REWARD_VS_AI[0], REWARD_VS_AI[1]);
+          debug(`🏆 Win vs AI → +${reward} SDC`);
+        } else {
+          reward = 0; // solo / no opponents
+        }
+        if (reward > 0) {
+          await awardCurrency(sanitizeKey(winner), reward, 'Match win');
+          if (currentUser && sanitizeKey(currentUser.uid) === sanitizeKey(winner)) {
+            alert(`🎉 You won! +${reward} SDC`);
+          }
+        }
+        // Chaos Dungeon grand prize for the last survivor (up to 250).
+        if (isChaos) {
+          const chaosPrize = randInt(100, CHAOS_PRIZE_MAX);
+          await awardCurrency(sanitizeKey(winner), chaosPrize, 'Chaos victory');
+          if (currentUser && sanitizeKey(currentUser.uid) === sanitizeKey(winner)) {
+            alert(`🌀 Chaos Dungeon cleared! Bonus +${chaosPrize} SDC`);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ----- DEBUFF TICK (start of a player's turn) -----
+// Applies damage-over-time (corrosion / meltdown) and decrements all active
+// debuff counters. Weaken / disarm are read directly during attack resolution.
+async function applyDebuffTick(roomRef, pid) {
+  const snap = await get(roomRef);
+  if (!snap.exists()) return;
+  const data = snap.val();
+  const player = data.players?.[pid];
+  if (!player || !player.isAlive) return;
+  const field = normalizeField(player.field);
+  let changed = false;
+  for (let i = 0; i < field.length; i++) {
+    const s = field[i];
+    if (!s || !s.debuffTurns || Object.keys(s.debuffTurns).length === 0) continue;
+    if (s.debuffTurns.corrosion) { s.hp -= 60; changed = true; }
+    if (s.debuffTurns.meltdown) { s.hp -= 40; changed = true; }
+    for (const k of Object.keys(s.debuffTurns)) {
+      s.debuffTurns[k] -= 1;
+      if (s.debuffTurns[k] <= 0) delete s.debuffTurns[k];
+    }
+    if (s.hp <= 0) { field[i] = null; changed = true; }
+  }
+  if (changed) {
+    await update(roomRef, { [`players/${pid}/field`]: field });
+    await checkWinCondition(roomRef);
+  }
+}
+
+// ============================================================
+// ADMIN PANEL, CARD LIST, STORE & SHOP
+// ============================================================
+
+// --- Populate skill dropdown ---
+const skillSelect = document.getElementById('cardSkill');
+const skillNames = [
+  'Assault Strike','Bombardment','Sniper Shot','Missile Barrage',
+  'Repair','Reinforce','Energy Shield','Medic Support',
+  'Power Surge','Fortify','Inspire','Overclock',
+  'Weaken','Corrosion','Disarm','Meltdown',
+  'Apophis (Swap)','Retreat','Tactical Shift','Sabotage',
+  'Evasion','Dragon Fusion (East)','Dragon Fusion (West)','Berserk',
+  'Counterstrike','Phantom','Sacrifice'
+];
+for (let i=0; i<27; i++) {
+  const opt = document.createElement('option');
+  opt.value = i+1;
+  opt.textContent = `${i+1}. ${skillNames[i] || 'Skill'}`;
+  skillSelect.appendChild(opt);
+}
+
+// --- Show/hide pack input ---
+document.getElementById('productType').addEventListener('change', function() {
+  const cardGroup = document.getElementById('productCardIdGroup');
+  const packGroup = document.getElementById('productPackGroup');
+  const cardLabel = document.getElementById('productCardIdLabel');
+  if (this.value === 'pack') {
+    cardGroup.style.display = 'none';
+    packGroup.style.display = 'block';
+    cardLabel.textContent = 'Card';
+  } else if (this.value === 'blindbox') {
+    cardGroup.style.display = 'block';
+    packGroup.style.display = 'none';
+    cardLabel.textContent = 'Hidden Card (players won’t see this)';
+  } else {
+    cardGroup.style.display = 'block';
+    packGroup.style.display = 'none';
+    cardLabel.textContent = 'Card';
+  }
+});
+
+// --- AI CARD ARTWORK ---
+// Every card gets an AI-generated picture. We use the pollinations.ai
+// text-to-image API (free, no key, URL-based): the prompt is built from the
+// card's name/type and the seed is a deterministic hash of the name so the
+// same card always gets the same artwork. The URL is stored on the card record
+// at creation time (`img`), and cardArtUrl() falls back to generating the URL
+// on the fly for older cards that were created before this feature.
+function nameSeed(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function aiCardImageUrl(name, type) {
+  const prompt = (type === 'action')
+    ? `trading card game art, ${name}, futuristic military tech gadget, vibrant digital painting, no text`
+    : `trading card game art, ${name} aircraft flying in a blue sky, detailed digital painting, no text`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=128&height=128&nologo=true&seed=${nameSeed(name)}`;
+}
+// Resolve the artwork URL for a card: stored img first, generated fallback.
+function cardArtUrl(cardId) {
+  const c = cardCache[cardId];
+  if (!c || !c.name) return '';
+  return c.img || aiCardImageUrl(c.name, c.type || 'plane');
+}
+
+// --- CREATE CARD ---
+document.getElementById('createCardBtn').addEventListener('click', async () => {
+  if (!currentUser) return alert('Login first.');
+  if (!isAdmin && !promptAdminPassword()) return;
+  const name = document.getElementById('cardName').value.trim();
+  const hp = parseInt(document.getElementById('cardHp').value);
+  const dmg = parseInt(document.getElementById('cardDmg').value);
+  const skill = parseInt(document.getElementById('cardSkill').value);
+  const rarity = document.getElementById('cardRarity').value;
+  const type = document.getElementById('cardType').value;
+  if (!name || isNaN(hp) || isNaN(dmg) || isNaN(skill)) return alert('Fill all fields.');
+  // AI-generated artwork is created automatically from the card name/type.
+  const img = aiCardImageUrl(name, type);
+  try {
+    if (editCardId) {
+      await update(ref(db, `admin/cards/${editCardId}`), { name, hp, dmg, skill, rarity, type, img });
+      alert(`Card "${name}" updated! (AI artwork regenerated)`);
+      debug(`✅ Card updated: ${name} (${editCardId})`);
+      editCardId = null;
+      document.getElementById('createCardBtn').textContent = '➕ Create Card';
+    } else {
+      const cardRef = push(ref(db, 'admin/cards'));
+      await set(cardRef, { name, hp, dmg, skill, rarity, type, img });
+      const cardId = cardRef.key;
+      alert(`Card "${name}" created with AI artwork! ID: ${cardId}`);
+      debug(`✅ Card created: ${name} (${cardId}) + AI artwork`);
+    }
+    await loadCardCache();
+    updateCardList();
+  } catch (e) {
+    alert('Failed to save card: ' + e.message);
+  }
+});
+
+// --- UPDATE CARD LIST ---
+async function updateCardList() {
+  const snap = await get(ref(db, 'admin/cards'));
+  const listDiv = document.getElementById('cardList');
+  listDiv.innerHTML = '';
+  if (snap.exists()) {
+    const cards = snap.val();
+    for (const [id, card] of Object.entries(cards)) {
+      const item = document.createElement('div');
+      item.className = 'card-list-item';
+      const typeBadge = `<span style="font-size:0.7rem;background:#2b5a82;color:#fff;padding:1px 6px;border-radius:10px;margin-left:6px;">${card.type || 'plane'}</span>`;
+      item.innerHTML = `<span><strong>${id}</strong> ${escapeHtml(card.name)}${typeBadge}</span><span>❤️${card.hp} ⚔️${card.dmg} <button class="edit-card" data-id="${id}" style="margin-left:6px;background:rgba(43,90,130,0.15);border:none;border-radius:8px;cursor:pointer;">✏️</button> <button class="del-card" data-id="${id}" style="color:#b03a3a;background:none;border:none;cursor:pointer;">🗑️</button></span>`;
+      listDiv.appendChild(item);
+    }
+    listDiv.querySelectorAll('.del-card').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (confirm('Delete this card?')) { await remove(ref(db, `admin/cards/${btn.dataset.id}`)); await loadCardCache(); updateCardList(); }
+      });
+    });
+    listDiv.querySelectorAll('.edit-card').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cSnap = await get(ref(db, `admin/cards/${btn.dataset.id}`));
+        const c = cSnap.val();
+        if (!c) return;
+        document.getElementById('cardName').value = c.name || '';
+        document.getElementById('cardHp').value = c.hp || 0;
+        document.getElementById('cardDmg').value = c.dmg || 0;
+        document.getElementById('cardSkill').value = c.skill || 1;
+        document.getElementById('cardRarity').value = c.rarity || 'Common';
+        const tSel = document.getElementById('cardType'); if (tSel) tSel.value = c.type || 'plane';
+        editCardId = btn.dataset.id;
+        document.getElementById('createCardBtn').textContent = '💾 Update Card';
+      });
+    });
+  } else {
+    listDiv.innerHTML = '<span style="color:#888;">No cards yet.</span>';
+  }
+  renderAdminSellList(); // keep the admin sell list in sync with the card pool
+}
+updateCardList();
+
+// --- CREATE STORE PRODUCT ---
+document.getElementById('createProductBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  const type = document.getElementById('productType').value;
+  const price = parseInt(document.getElementById('productPrice').value);
+  if (isNaN(price) || price <= 0) return alert('Enter a valid price.');
+  const quantity = parseInt(document.getElementById('productQuantity').value);
+  if (isNaN(quantity) || quantity <= 0) return alert('Enter a valid quantity.');
+  let productData = { type, price, quantity };
+  if (type === 'card' || type === 'blindbox') {
+    const cardId = document.getElementById('productCardId').value;
+    if (!cardId || !cardCache[cardId]) return alert('Select a card.');
+    productData.cardId = cardId;
+  } else {
+    const cardIds = Array.from(document.querySelectorAll('#productPackIds input[type="checkbox"]:checked')).map(cb => cb.value);
+    document.getElementById('productPackCount').textContent = '';
+    if (cardIds.length === 0) return alert('Tick at least one card.');
+    const missing = cardIds.filter(id => !cardCache[id]);
+    if (missing.length > 0) return alert('Invalid cards: ' + missing.length + ' missing.');
+    productData.cardIds = cardIds;
+  }
+  try {
+    const prodRef = push(ref(db, 'admin/store'));
+    await set(prodRef, productData);
+    alert('Product added to store!');
+    debug('✅ Store product added.');
+    loadStore();
+    loadShopProducts();
+  } catch (e) {
+    alert('Failed to create product: ' + e.message);
+  }
+});
+
+// --- POPULATE CARD SELECT DROPDOWNS (by name, not ID) ---
+function populateCardSelects() {
+  const cardSel = document.getElementById('productCardId');
+  const packSel = document.getElementById('productPackIds');
+  if (!cardSel || !packSel) return;
+  const cards = Object.keys(cardCache)
+    .map(id => ({ id, name: cardCache[id].name || id, type: cardCache[id].type || 'plane' }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  cardSel.innerHTML = '<option value="" disabled selected>Select a card…</option>' +
+    cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  // Pack cards: a checkbox list so multiple cards can be picked without
+  // modifier keys (works on Mac, Windows, and mobile touch).
+  packSel.innerHTML = cards.map(c =>
+    `<label class="pack-check"><input type="checkbox" value="${c.id}"> ${escapeHtml(c.name)}</label>`).join('');
+  // Live count of how many are ticked.
+  packSel.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const n = packSel.querySelectorAll('input[type="checkbox"]:checked').length;
+      const countEl = document.getElementById('productPackCount');
+      if (countEl) countEl.textContent = n ? `${n} card${n > 1 ? 's' : ''} selected` : '';
+    });
+  });
+}
+
+// --- PRODUCT STOCK HELPER ---
+// Returns the remaining quantity for a product. Products created before the
+// quantity feature exist have no `quantity` field → treated as unlimited
+// (Infinity), so they keep working unchanged.
+function productStock(prod) {
+  const q = Number(prod.quantity);
+  return isNaN(q) ? Infinity : q;
+}
+
+// --- DISCOUNTS ---
+// A global discount (%) in admin/discount applies to ALL store items. Each
+// product may also carry its own `discount` (%) field. A per-item discount
+// OVERRIDES the global one for that item; 0 means no discount.
+let globalDiscountPct = 0;
+
+// Loads the global discount from admin/discount.
+async function loadGlobalDiscount() {
+  try {
+    const snap = await get(ref(db, 'admin/discount'));
+    globalDiscountPct = snap.exists() ? (Number(snap.val()) || 0) : 0;
+  } catch (e) { globalDiscountPct = 0; }
+}
+
+// The discount % actually applied to a product (per-item wins, else global).
+function effectiveDiscountPct(prod) {
+  const itemD = Number(prod.discount) || 0;
+  const d = itemD > 0 ? itemD : (Number(globalDiscountPct) || 0);
+  return Math.max(0, Math.min(100, d));
+}
+
+// Final price after the effective discount (never below 1 SDC).
+function discountedPrice(prod) {
+  const base = Number(prod.price) || 0;
+  const d = effectiveDiscountPct(prod);
+  return Math.max(1, Math.round(base * (1 - d / 100)));
+}
+
+// --- LOAD STORE (admin) ---
+async function loadStore() {
+  const snap = await get(ref(db, 'admin/store'));
+  const list = document.getElementById('storeList');
+  list.innerHTML = '';
+  if (snap.exists()) {
+    const products = snap.val();
+    for (const [key, prod] of Object.entries(products)) {
+      const div = document.createElement('div');
+      div.className = 'product-item';
+      let desc, qtyText;
+      if (prod.type === 'card') {
+        desc = `Card: ${cardCache[prod.cardId]?.name || prod.cardId}`;
+      } else if (prod.type === 'blindbox') {
+        desc = `Blind Box → contains: ${cardCache[prod.cardId]?.name || prod.cardId}`;
+      } else {
+        const names = (prod.cardIds || []).map(id => cardCache[id]?.name || id);
+        desc = `Pack (${names.length}): ${names.join(', ')}`;
+      }
+      const stock = productStock(prod);
+      qtyText = isFinite(stock) ? ` — ${stock} left` : '';
+      const out = isFinite(stock) && stock <= 0 ? ' (OUT OF STOCK)' : '';
+      const finalPrice = discountedPrice(prod);
+      const struck = finalPrice < prod.price
+        ? ` <s style="color:#999;text-decoration:line-through;">💰${prod.price}</s>` : '';
+      div.innerHTML = `<label class="store-item-pick"><input type="checkbox" class="promo-pick-item" data-key="${key}"> select</label>
+        <span class="store-item-info">${desc} (💰${finalPrice}${struck})${qtyText}${out}</span>
+        <span class="store-item-discount">
+          <input type="number" class="item-discount-input" data-key="${key}" value="${Number(prod.discount) || 0}" min="0" max="100" style="width:52px;">%
+          <button class="set-item-discount" data-key="${key}">Set</button>
+        </span>
+        <button class="delete-product" data-key="${key}">🗑️</button>`;
+      list.appendChild(div);
+    }
+    document.querySelectorAll('.delete-product').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.dataset.key;
+        if (confirm('Remove this product?')) {
+          await remove(ref(db, `admin/store/${key}`));
+          loadStore();
+          loadShopProducts();
+        }
+      });
+    });
+    document.querySelectorAll('.set-item-discount').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!isAdmin && !promptAdminPassword()) return;
+        const key = btn.dataset.key;
+        const inp = document.querySelector(`.item-discount-input[data-key="${key}"]`);
+        let pct = parseInt(inp.value, 10);
+        if (isNaN(pct)) pct = 0;
+        pct = Math.max(0, Math.min(100, pct));
+        await update(ref(db, `admin/store/${key}`), { discount: pct });
+        loadStore();
+        loadShopProducts();
+      });
+    });
+  } else {
+    list.innerHTML = '<span style="color:#888;">No products in store.</span>';
+  }
+}
+
+// --- DISCOUNT CONTROLS (admin) ---
+const discountPctInput = document.getElementById('discountPct');
+// Apply a discount ONLY to the items the admin ticked in the store list.
+document.getElementById('applySelectedDiscountBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  const pct = parseInt(discountPctInput.value, 10);
+  if (isNaN(pct) || pct < 0 || pct > 100) return alert('Enter a discount between 0 and 100%.');
+  const picked = Array.from(document.querySelectorAll('.promo-pick-item:checked')).map(c => c.dataset.key);
+  if (picked.length === 0) return alert('Tick at least one item to discount first.');
+  const updates = {};
+  picked.forEach(k => { updates[`${k}/discount`] = pct; });
+  await update(ref(db, 'admin/store'), updates);
+  const note = document.getElementById('discountNote');
+  if (note) note.textContent = `✅ Discount of ${pct}% applied to ${picked.length} selected item(s).`;
+  loadStore();
+  loadShopProducts();
+});
+document.getElementById('clearDiscountsBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  if (!confirm('Clear the global discount AND every per-item discount?')) return;
+  await set(ref(db, 'admin/discount'), 0);
+  globalDiscountPct = 0;
+  if (discountPctInput) discountPctInput.value = 10;
+  try {
+    const snap = await get(ref(db, 'admin/store'));
+    if (snap.exists()) {
+      const updates = {};
+      for (const [key, prod] of Object.entries(snap.val())) {
+        if (Number(prod.discount) > 0) updates[`${key}/discount`] = 0;
+      }
+      if (Object.keys(updates).length) await update(ref(db, 'admin/store'), updates);
+    }
+  } catch (e) { debug('⚠️ clearDiscounts: ' + (e && e.message)); }
+  const note = document.getElementById('discountNote');
+  if (note) note.textContent = '✅ All discounts cleared.';
+  loadStore();
+  loadShopProducts();
+});
+loadStore();
+
+// --- PROMO CODES (admin creates, players redeem) ---
+// Admins build a code that grants a fixed set of items (chosen below).
+function renderPromoCardPicker() {
+  const wrap = document.getElementById('promoCardIds');
+  if (!wrap) return;
+  const ids = Object.keys(cardCache);
+  wrap.innerHTML = ids.map(id => {
+    const c = cardCache[id];
+    return `<label class="pack-checkbox"><input type="checkbox" class="promo-card-pick" value="${id}"> ${c.name || id} ${c.rarity ? '(' + c.rarity + ')' : ''}</label>`;
+  }).join('');
+}
+document.getElementById('createPromoBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  const code = (document.getElementById('promoCode').value || '').trim().toUpperCase();
+  if (!/^[A-Z0-9_-]{3,20}$/.test(code)) return alert('Promo code must be 3-20 chars: A-Z 0-9 _ -');
+  const cards = Array.from(document.querySelectorAll('.promo-card-pick:checked')).map(c => c.value);
+  if (cards.length === 0) return alert('Select at least one item to grant.');
+  // De-duplicate while preserving order.
+  const unique = [...new Set(cards)];
+  await set(ref(db, `admin/promos/${code}`), { cards: unique, createdAt: Date.now() });
+  alert(`✅ Promo code "${code}" created with ${unique.length} item(s).`);
+  document.getElementById('promoCode').value = '';
+  document.querySelectorAll('.promo-card-pick:checked').forEach(c => c.checked = false);
+  loadPromoList();
+});
+
+async function loadPromoList() {
+  const list = document.getElementById('promoList');
+  if (!list) return;
+  try {
+    const snap = await get(ref(db, 'admin/promos'));
+    if (!snap.exists()) { list.innerHTML = '<p style="font-size:0.74rem;color:#888;">No promo codes yet.</p>'; return; }
+    list.innerHTML = Object.entries(snap.val()).map(([code, p]) => {
+      const names = (p.cards || []).map(id => cardCache[id]?.name || id).join(', ');
+      return `<div class="store-product"><span class="store-item-info">🎟️ <b>${code}</b> → ${names}</span>
+        <button class="delete-promo" data-code="${code}">🗑️</button></div>`;
+    }).join('');
+    list.querySelectorAll('.delete-promo').forEach(btn => btn.addEventListener('click', async () => {
+      if (!isAdmin && !promptAdminPassword()) return;
+      if (!confirm(`Delete promo "${btn.dataset.code}"?`)) return;
+      await remove(ref(db, `admin/promos/${btn.dataset.code}`));
+      loadPromoList();
+    }));
+  } catch (e) { debug('⚠️ loadPromoList: ' + (e && e.message)); }
+}
+loadPromoList();
+
+// Player-side redemption of a Promo Code (grants the admin-defined item set once).
+document.getElementById('redeemPromoBtn').addEventListener('click', async () => {
+  if (!currentUser) return alert('Log in first.');
+  const code = (document.getElementById('promoCodeInput').value || '').trim().toUpperCase();
+  if (!code) return alert('Enter a promo code.');
+  const snap = await get(ref(db, `admin/promos/${code}`));
+  if (!snap.exists()) return alert('❌ Invalid promo code.');
+  const promo = snap.val();
+  if (!promo.cards || promo.cards.length === 0) return alert('❌ This promo has no items.');
+  // One-time redemption per user: track under users/<uid>/redeemedPromos.
+  const safeUid = sanitizeKey(currentUser.uid);
+  const userSnap = await get(ref(db, `users/${safeUid}`));
+  const redeemed = (userSnap.exists() && userSnap.val().redeemedPromos) || [];
+  if (redeemed.includes(code)) return alert('⚠️ You already used this promo code.');
+  const granted = await grantCardsToUser(safeUid, promo.cards);
+  if (granted.length === 0) return alert('❌ None of the promo items are valid.');
+  await update(ref(db, `users/${safeUid}`), { redeemedPromos: [...redeemed, code] });
+  const names = granted.map(id => cardCache[id]?.name || id).join(', ');
+  alert(`🎟️ Promo redeemed! Granted: ${names}`);
+  document.getElementById('promoCodeInput').value = '';
+  updateCardList();
+});
+
+// --- DEBUG PANEL (admin) ---
+function renderDebugState() {
+  const el = document.getElementById('debugState');
+  if (!el) return;
+  const state = {
+    currentUser: currentUser ? currentUser.uid.slice(0, 10) + '…' : null,
+    isAdmin,
+    userCurrency,
+    currentRoom,
+    mode: (currentRoom && (window.__lastGameData?.mode)) || null,
+    turnPid: (currentRoom && window.__lastGameData?.turnPid) || null,
+    cardCacheCount: Object.keys(cardCache).length,
+    adminCardsLoaded: adminCards.length,
+    globalDiscountPct,
+    time: new Date().toLocaleTimeString()
+  };
+  el.textContent = JSON.stringify(state, null, 2);
+}
+function showDebugMsg(msg) {
+  const el = document.getElementById('debugMsg');
+  if (el) el.textContent = msg;
+}
+document.getElementById('dbgRefreshBtn').addEventListener('click', () => { renderDebugState(); showDebugMsg('State refreshed.'); });
+document.getElementById('dbgReloadCardsBtn').addEventListener('click', async () => {
+  await loadCardCache();
+  renderPromoCardPicker();
+  renderDebugState();
+  showDebugMsg('Card cache reloaded.');
+});
+document.getElementById('dbgForceWinBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  if (!currentRoom) return showDebugMsg('Not in a room.');
+  const gsnap = await get(ref(db, `games/${currentRoom}`));
+  if (!gsnap.exists()) return showDebugMsg('Room not found.');
+  const data = gsnap.val();
+  const players = data.players || {};
+  const updates = {};
+  for (const pid of Object.keys(players)) {
+    if (pid !== (currentUser ? sanitizeKey(currentUser.uid) : null)) updates[`players/${pid}/isAlive`] = false;
+  }
+  await update(ref(db, `games/${currentRoom}`), updates);
+  showDebugMsg('Forced other players eliminated — checkWinCondition will run on next turn.');
+});
+document.getElementById('dbgGiveCurrencyBtn').addEventListener('click', async () => {
+  if (!isAdmin && !promptAdminPassword()) return;
+  if (!currentUser) return showDebugMsg('No user logged in.');
+  await awardCurrency(sanitizeKey(currentUser.uid), 100, 'Debug grant');
+  showDebugMsg('+100 SDC granted to you.');
+  renderDebugState();
+});
+// The promo picker and debug state are populated at init; the "Refresh State"
+// button (in the Debug panel) and "Reload Cards" button keep them current.
+renderPromoCardPicker();
+renderDebugState();
+
+// --- LOAD SHOP (player) ---
+async function loadShopProducts() {
+  shopGrid.innerHTML = '<p>Loading products…</p>';
+  try {
+    await loadGlobalDiscount(); // always read latest global discount for buyers
+    const snap = await get(ref(db, 'admin/store'));
+    if (!snap.exists()) {
+      shopGrid.innerHTML = '<p>No products available. Ask an admin to add some in the Admin console.</p>';
+      return;
+    }
+    const products = snap.val();
+    const currency = userCurrency || 0;
+    shopGrid.innerHTML = '';
+    for (const [key, prod] of Object.entries(products)) {
+      const div = document.createElement('div');
+      div.className = 'shop-item';
+      // Players never see the hidden card inside a Blind Box.
+      let desc;
+      if (prod.type === 'card') {
+        desc = `Card: ${cardCache[prod.cardId]?.name || prod.cardId}`;
+      } else if (prod.type === 'blindbox') {
+        desc = `🎁 Blind Box Pack (mystery card)`;
+      } else {
+        desc = `Pack (random from ${prod.cardIds?.length || 0} cards)`;
+      }
+      const stock = productStock(prod);
+      const outOfStock = isFinite(stock) && stock <= 0;
+      const finalPrice = discountedPrice(prod);
+      const canBuy = currency >= finalPrice && !outOfStock;
+      const btnLabel = outOfStock ? 'Out of stock' : (currency < finalPrice ? 'Not enough' : 'Buy');
+      const struck = finalPrice < prod.price
+        ? ` <s style="color:#999;text-decoration:line-through;">💰${prod.price}</s>` : '';
+      div.innerHTML = `
+        <span><strong>${desc}</strong> — 💰${finalPrice}${struck}</span>
+        <button class="buy-shop-item" data-key="${key}" ${canBuy ? '' : 'disabled'}>
+          ${btnLabel}
+        </button>
+      `;
+      shopGrid.appendChild(div);
+    }
+    document.querySelectorAll('.buy-shop-item').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.dataset.key;
+        await purchaseProduct(key);
+      });
+    });
+  } catch (e) {
+    shopGrid.innerHTML = `<p style="color:#b03a3a;">Could not load shop: ${escapeHtml(e && e.message)}</p>`;
+    debug('⚠️ Shop load error: ' + (e && e.message));
+  }
+}
+
+// --- PURCHASE PRODUCT ---
+async function purchaseProduct(prodKey) {
+  if (!currentUser) return alert('You must be logged in.');
+  const prodSnap = await get(ref(db, `admin/store/${prodKey}`));
+  if (!prodSnap.exists()) return alert('Product no longer available.');
+  const prod = prodSnap.val();
+  await loadGlobalDiscount(); // ensure the price matches the current global discount
+  const price = discountedPrice(prod);
+  const stock = productStock(prod);
+  if (isFinite(stock) && stock <= 0) return alert('Out of stock!');
+  const userRef = ref(db, `users/${sanitizeKey(currentUser.uid)}`);
+  const userSnap = await get(userRef);
+  let currency = 0, hand = [];
+  if (userSnap.exists()) {
+    currency = userSnap.val().currency || 0;
+    hand = userSnap.val().hand || [];
+  } else {
+    return alert('User data not found.');
+  }
+  if (currency < price) return alert('Not enough currency!');
+  let cardsToAdd = [];
+  let revealMsg = '';
+  if (prod.type === 'card' || prod.type === 'blindbox') {
+    if (cardCache[prod.cardId]) cardsToAdd.push(prod.cardId);
+    else return alert('Card not found.');
+    if (prod.type === 'blindbox') revealMsg = ` The Blind Box contained: ${cardCache[prod.cardId]?.name || prod.cardId}!`;
+  } else {
+    const ids = prod.cardIds || [];
+    if (ids.length === 0) return alert('Pack is empty.');
+    const randomId = ids[Math.floor(Math.random() * ids.length)];
+    if (cardCache[randomId]) cardsToAdd.push(randomId);
+    else return alert('Card not found.');
+  }
+  const newCurrency = currency - price;
+  const newHand = [...hand, ...cardsToAdd];
+  // Use update (not set) so we never overwrite unrelated fields like `lineup`
+  // or `redeemed` that live on the same user node.
+  await update(userRef, { currency: newCurrency, hand: newHand });
+  // Decrement stock for products with a finite quantity.
+  if (isFinite(stock)) {
+    await update(ref(db, `admin/store/${prodKey}`), { quantity: stock - 1 });
+  }
+  userCurrency = newCurrency;
+  updateCurrencyDisplay();
+  alert(`Purchase successful! Added ${cardsToAdd.length} card(s).${revealMsg}`);
+  debug(`✅ Purchased product, added ${cardsToAdd.length} cards.`);
+  if (currentRoom) {
+    const safeUid = sanitizeKey(currentUser.uid);
+    await update(ref(db, `games/${currentRoom}/players/${safeUid}`), { currency: newCurrency });
+  }
+  loadShopProducts();
+  updateCardList();
+  if (currentRoom) renderGame();
+}
+
+// ============================================================
+// ADMIN: SELL ACTION CARDS TO THE SHOP (may sell cards they don't own)
+// ============================================================
+// "Selling" here means LISTING the action card as a store product that players
+// can buy in the Shop, at a price the admin chooses. No SDC is credited to the
+// admin's balance. Admins may list ANY action card from the global pool — they
+// do not need to own it (players are not allowed to sell at all).
+
+// Renders the list of ALL action cards with a "Sell on Shop" button (admin privilege).
+async function renderAdminSellList() {
+  const list = document.getElementById('adminSellList');
+  if (!list) return;
+  if (!isAdmin) { list.innerHTML = '<p style="color:#888;font-size:0.8rem;">Admin access required.</p>'; return; }
+  const actionCards = Object.keys(cardCache).filter(id => (cardCache[id].type || 'plane') === 'action');
+  if (actionCards.length === 0) {
+    list.innerHTML = '<p style="color:#888;font-size:0.8rem;">No action cards exist.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  for (const id of actionCards) {
+    const c = cardCache[id];
+    const div = document.createElement('div');
+    div.className = 'product-item';
+    div.innerHTML = `<span><strong>${escapeHtml(c.name)}</strong> 🎴 <span style="font-size:0.75rem;color:#666;">${escapeHtml(c.effect || '')}</span></span>
+      <button class="admin-sell-btn" data-id="${id}">📤 Sell on Shop</button>`;
+    list.appendChild(div);
+  }
+  list.querySelectorAll('.admin-sell-btn').forEach(btn => {
+    btn.addEventListener('click', async () => { await adminSellCard(btn.dataset.id); });
+  });
+}
+
+// Lists an action card for sale on the Shop as a store product, using the
+// admin-chosen price and quantity. Proceeds from player purchases do NOT go to
+// the admin — the SDC is simply deducted from the buyer (like any store item).
+async function adminSellCard(cardId) {
+  if (!isAdmin && !promptAdminPassword()) return;
+  if (!cardCache[cardId] || (cardCache[cardId].type || 'plane') !== 'action') return alert('Only action cards can be sold.');
+  const price = parseInt(document.getElementById('adminSellPrice')?.value, 10);
+  const quantity = parseInt(document.getElementById('adminSellQty')?.value, 10);
+  if (isNaN(price) || price < 1) return alert('Enter a valid price (min 1 SDC).');
+  if (isNaN(quantity) || quantity < 1) return alert('Enter a valid quantity (min 1).');
+  const product = { type: 'card', cardId, price, quantity };
+  await push(ref(db, 'admin/store'), product);
+  alert(`📤 Listed ${cardCache[cardId].name} on the Shop for 💰${price} SDC (×${quantity}).`);
+  debug(`📤 Admin listed action card ${cardCache[cardId].name} on the Shop for 💰${price} SDC (×${quantity}).`);
+  loadStore();
+  loadShopProducts();
+}
+
+// ============================================================
+// SKYDUELS MARKETPLACE — SELL AND TRADE! (+ SkyStock)
+// ============================================================
+// Players sell their OWN cards to other players for 70% of the original price.
+// Listings live under `marketplace/{key}` = { sellerUid, sellerName, cardId,
+// price, created }. The card is held in escrow (removed from the seller's hand
+// when listed, returned on cancel). Buying pays the seller directly.
+const MARKET_RESALE_RATE = 0.7;
+// Fallback base prices by rarity, used when a card has never been sold in the
+// admin store (where the true "original price" would come from).
+const RARITY_BASE_PRICE = { common: 100, rare: 250, 'super rare': 500, superrare: 500, mythic: 800, legendary: 1200 };
+let storePriceMap = {};
+
+// Build cardId → original store price from admin/store 'card' products.
+async function refreshStorePriceMap() {
+  storePriceMap = {};
+  try {
+    const snap = await get(ref(db, 'admin/store'));
+    if (snap.exists()) {
+      for (const prod of Object.values(snap.val())) {
+        if (prod.type === 'card' && prod.cardId) {
+          const p = Number(prod.price) || 0;
+          if (p > 0 && (!storePriceMap[prod.cardId] || p < storePriceMap[prod.cardId])) storePriceMap[prod.cardId] = p;
+        }
+      }
+    }
+  } catch (e) { debug('⚠️ storePriceMap: ' + (e && e.message)); }
+}
+
+// Original price of a card: real store price if known, else rarity fallback.
+function cardBasePrice(cardId) {
+  if (storePriceMap[cardId]) return storePriceMap[cardId];
+  const r = (cardCache[cardId]?.rarity || 'Common').toLowerCase();
+  return RARITY_BASE_PRICE[r] || 100;
+}
+// Resale value = 70% of the original price (what the seller receives).
+function cardResaleValue(cardId) {
+  return Math.max(1, Math.floor(cardBasePrice(cardId) * MARKET_RESALE_RATE));
+}
+
+// --- Marketplace panel toggle ---
+const marketPanel = document.getElementById('marketPanel');
+document.getElementById('marketToggle').addEventListener('click', async () => {
+  marketPanel.classList.toggle('active');
+  if (marketPanel.classList.contains('active')) {
+    marketPanel.style.display = 'block';
+    const badge = document.getElementById('marketCurrencyBadge');
+    if (badge) badge.textContent = `${userCurrency || 0} SDC`;
+    await refreshStorePriceMap();
+    renderMarketSellList();
+    renderMarketListings();
+    renderSkyStock();
+  } else {
+    marketPanel.style.display = 'none';
+  }
+});
+
+// --- SELL YOUR CARDS: list an owned card at 70% of original price ---
+async function renderMarketSellList() {
+  const list = document.getElementById('marketSellList');
+  if (!list) return;
+  if (!currentUser) { list.innerHTML = '<span style="color:#888;">Log in to sell cards.</span>'; return; }
+  const safeUid = sanitizeKey(currentUser.uid);
+  const snap = await get(ref(db, `users/${safeUid}`));
+  const hand = (snap.exists() && Array.isArray(snap.val().hand)) ? snap.val().hand.filter(id => cardCache[id]) : [];
+  if (hand.length === 0) { list.innerHTML = '<span style="color:#888;">You own no cards to sell.</span>'; return; }
+  const locked = inBattle();
+  list.innerHTML = '';
+  hand.forEach((id, idx) => {
+    const c = cardCache[id];
+    const price = cardResaleValue(id);
+    const div = document.createElement('div');
+    div.className = 'product-item';
+    div.innerHTML = `<span><strong>${escapeHtml(c.name)}</strong> <span style="font-size:0.72rem;color:#666;">(${escapeHtml(c.rarity || 'Common')})</span></span>
+      <button class="market-list-btn" data-id="${id}" data-idx="${idx}" ${locked ? 'disabled' : ''}>Sell 💰${price}</button>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll('.market-list-btn').forEach(btn => {
+    btn.addEventListener('click', () => listCardOnMarket(btn.dataset.id, parseInt(btn.dataset.idx, 10)));
+  });
+}
+
+// Puts one owned card up for sale: removes it from the hand (escrow) and
+// creates a marketplace listing priced at 70% of the original price.
+async function listCardOnMarket(cardId, handIdx) {
+  if (!currentUser) return alert('Log in first.');
+  if (inBattle()) return alert('Selling is locked while a battle is active.');
+  const safeUid = sanitizeKey(currentUser.uid);
+  const userRef = ref(db, `users/${safeUid}`);
+  const snap = await get(userRef);
+  if (!snap.exists()) return;
+  const hand = Array.isArray(snap.val().hand) ? snap.val().hand : [];
+  // Remove exactly one instance of this card (prefer the clicked index).
+  let removeAt = (hand[handIdx] === cardId) ? handIdx : hand.indexOf(cardId);
+  if (removeAt === -1) return alert('You do not own that card.');
+  const newHand = [...hand];
+  newHand.splice(removeAt, 1);
+  const price = cardResaleValue(cardId);
+  await update(userRef, { hand: newHand });
+  await push(ref(db, 'marketplace'), {
+    sellerUid: safeUid,
+    sellerName: `Player ${safeUid.slice(0, 6)}`,
+    cardId, price, created: Date.now()
+  });
+  alert(`🏪 Listed ${cardCache[cardId].name} on the Marketplace for 💰${price} SDC.`);
+  debug(`🏪 Listed ${cardCache[cardId].name} for 💰${price}.`);
+  renderMarketSellList();
+  renderMarketListings();
+  renderSkyStock();
+  updateCardList();
+}
+
+// --- LISTINGS: browse, buy from other players, cancel your own ---
+async function renderMarketListings() {
+  const list = document.getElementById('marketListings');
+  if (!list) return;
+  const snap = await get(ref(db, 'marketplace'));
+  if (!snap.exists()) { list.innerHTML = '<span style="color:#888;">No listings yet — be the first to sell!</span>'; return; }
+  const safeUid = currentUser ? sanitizeKey(currentUser.uid) : '';
+  const listings = snap.val();
+  list.innerHTML = '';
+  for (const [key, l] of Object.entries(listings)) {
+    if (!cardCache[l.cardId]) continue;
+    const mine = l.sellerUid === safeUid;
+    const canBuy = !mine && (userCurrency || 0) >= l.price;
+    const div = document.createElement('div');
+    div.className = 'product-item';
+    div.innerHTML = `<span><strong>${escapeHtml(cardCache[l.cardId].name)}</strong>
+        <span style="font-size:0.72rem;color:#666;">by ${mine ? 'you' : escapeHtml(l.sellerName || 'Player')}</span> — 💰${l.price}</span>
+      ${mine
+        ? `<button class="market-cancel-btn" data-key="${key}">↩️ Cancel</button>`
+        : `<button class="market-buy-btn" data-key="${key}" ${canBuy ? '' : 'disabled'}>${canBuy ? 'Buy' : 'Not enough'}</button>`}`;
+    list.appendChild(div);
+  }
+  if (!list.children.length) list.innerHTML = '<span style="color:#888;">No listings yet — be the first to sell!</span>';
+  list.querySelectorAll('.market-buy-btn').forEach(btn => btn.addEventListener('click', () => buyMarketListing(btn.dataset.key)));
+  list.querySelectorAll('.market-cancel-btn').forEach(btn => btn.addEventListener('click', () => cancelMarketListing(btn.dataset.key)));
+}
+
+// Buy: pay the price, credit the seller, move the card to the buyer's hand.
+async function buyMarketListing(key) {
+  if (!currentUser) return alert('Log in first.');
+  const lSnap = await get(ref(db, `marketplace/${key}`));
+  if (!lSnap.exists()) { alert('Listing no longer available.'); renderMarketListings(); return; }
+  const l = lSnap.val();
+  const safeUid = sanitizeKey(currentUser.uid);
+  if (l.sellerUid === safeUid) return alert('You cannot buy your own listing.');
+  const userRef = ref(db, `users/${safeUid}`);
+  const uSnap = await get(userRef);
+  if (!uSnap.exists()) return alert('User data not found.');
+  const u = uSnap.val();
+  const currency = Number(u.currency) || 0;
+  if (currency < l.price) return alert('Not enough SDC!');
+  // Remove the listing FIRST so two buyers can't both purchase it.
+  await remove(ref(db, `marketplace/${key}`));
+  await update(userRef, { currency: currency - l.price, hand: [...(u.hand || []), l.cardId] });
+  userCurrency = currency - l.price;
+  updateCurrencyDisplay();
+  // Credit the seller's balance (works whether they're online or not).
+  const sellerRef = ref(db, `users/${l.sellerUid}`);
+  const sSnap = await get(sellerRef);
+  if (sSnap.exists()) {
+    await update(sellerRef, { currency: (Number(sSnap.val().currency) || 0) + l.price });
+  }
+  if (currentRoom) await update(ref(db, `games/${currentRoom}/players/${safeUid}`), { currency: userCurrency });
+  alert(`✅ Bought ${cardCache[l.cardId]?.name || 'card'} for 💰${l.price} SDC!`);
+  debug(`🏪 Bought ${cardCache[l.cardId]?.name} from ${l.sellerName} for 💰${l.price}.`);
+  const badge = document.getElementById('marketCurrencyBadge');
+  if (badge) badge.textContent = `${userCurrency} SDC`;
+  renderMarketSellList();
+  renderMarketListings();
+  renderSkyStock();
+}
+
+// Cancel your own listing: the card returns to your hand.
+async function cancelMarketListing(key) {
+  if (!currentUser) return;
+  const lSnap = await get(ref(db, `marketplace/${key}`));
+  if (!lSnap.exists()) { renderMarketListings(); return; }
+  const l = lSnap.val();
+  const safeUid = sanitizeKey(currentUser.uid);
+  if (l.sellerUid !== safeUid) return alert('Not your listing.');
+  await remove(ref(db, `marketplace/${key}`));
+  const userRef = ref(db, `users/${safeUid}`);
+  const uSnap = await get(userRef);
+  if (uSnap.exists()) await update(userRef, { hand: [...(uSnap.val().hand || []), l.cardId] });
+  debug(`🏪 Listing cancelled — ${cardCache[l.cardId]?.name} returned to your hand.`);
+  renderMarketSellList();
+  renderMarketListings();
+  renderSkyStock();
+}
+
+// --- SKYSTOCK: what each owned card is worth when re-selling ---
+async function renderSkyStock() {
+  const table = document.getElementById('skyStockTable');
+  if (!table) return;
+  if (!currentUser) { table.innerHTML = '<tr><td style="color:#888;">Log in to see your card values.</td></tr>'; return; }
+  const safeUid = sanitizeKey(currentUser.uid);
+  const snap = await get(ref(db, `users/${safeUid}`));
+  const hand = (snap.exists() && Array.isArray(snap.val().hand)) ? snap.val().hand.filter(id => cardCache[id]) : [];
+  if (hand.length === 0) { table.innerHTML = '<tr><td style="color:#888;">You own no cards.</td></tr>'; return; }
+  // Group copies of the same card so the table stays compact.
+  const counts = {};
+  for (const id of hand) counts[id] = (counts[id] || 0) + 1;
+  let rows = '<tr><th>Card</th><th>Owned</th><th>Original 💰</th><th>Resale 💰 (70%)</th></tr>';
+  let total = 0;
+  for (const [id, n] of Object.entries(counts)) {
+    const base = cardBasePrice(id);
+    const resale = cardResaleValue(id);
+    total += resale * n;
+    rows += `<tr><td>${escapeHtml(cardCache[id].name)} <span style="font-size:0.72rem;color:#666;">(${escapeHtml(cardCache[id].rarity || 'Common')})</span></td>
+      <td>×${n}</td><td>💰${base}</td><td><b>💰${resale}</b></td></tr>`;
+  }
+  rows += `<tr><td colspan="3" style="text-align:right;font-weight:600;">Portfolio resale value:</td><td><b>💰${total}</b></td></tr>`;
+  table.innerHTML = rows;
+}
+
+// ============================================================
+// ADMIN: PLAYER REGISTRY (every player ever, online or not)
+// ============================================================
+async function renderAdminPlayerList() {
+  const list = document.getElementById('adminPlayerList');
+  if (!list) return;
+  if (!isAdmin) { list.innerHTML = '<span style="color:#888;">Admin access required.</span>'; return; }
+  const snap = await get(ref(db, 'users'));
+  if (!snap.exists()) { list.innerHTML = '<span style="color:#888;">No players yet.</span>'; return; }
+  const users = snap.val();
+  const entries = Object.entries(users)
+    .sort((a, b) => (b[1].online === true ? 1 : 0) - (a[1].online === true ? 1 : 0) || (b[1].lastSeen || 0) - (a[1].lastSeen || 0));
+  list.innerHTML = '';
+  for (const [uid, u] of entries) {
+    const online = u.online === true;
+    const lastSeen = u.lastSeen ? new Date(u.lastSeen).toLocaleString() : '—';
+    const cards = Array.isArray(u.hand) ? u.hand.length : 0;
+    const item = document.createElement('div');
+    item.className = 'card-list-item';
+    item.innerHTML = `<span>${online ? '🟢' : '⚪'} <strong>${escapeHtml(u.name || 'Player ' + uid.slice(0, 6))}</strong>
+        <span style="font-size:0.7rem;color:#888;">${escapeHtml(uid.slice(0, 10))}…</span></span>
+      <span style="font-size:0.78rem;">💰${Number(u.currency) || 0} · 🎴${cards} · ${online ? '<b style="color:#2b7a2b;">online</b>' : 'last seen ' + escapeHtml(lastSeen)}</span>`;
+    list.appendChild(item);
+  }
+}
+document.getElementById('refreshPlayersBtn')?.addEventListener('click', renderAdminPlayerList);
+
+// ============================================================
+// ADMIN: SUPABASE ACCOUNT DATABASE VIEWER
+// ============================================================
+// Mirrors the standalone "Seraph Web" Account Database page: reads each
+// player's balance column from the Supabase `players` table and lists them.
+// This is a SEPARATE data source from Firebase (used by the game itself),
+// so it is shown as its own panel. Supabase is loaded lazily on first use.
+const SUPABASE_URL = "https://jxfmyrgurzoztuxsbyqb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4Zm15cmd1cnpvenR1eHNieXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDQ5MTMsImV4cCI6MjA5NzcyMDkxM30.GG9Y32NNqNsfEXEah7h2xtVTIgvsJoyi6lWr1WVgvO8";
+const SUPABASE_IGNORE_COLUMNS = ["id", "created_at", "updated_at"];
+const SUPABASE_PLAYER_LABELS = { hokyu: "hok yu", astin: "asten", chtim: "chit tim" };
+let supabaseClient = null;
+let supabaseVisibleColumns = [];
+
+function supabaseGetDisplayName(column) {
+  return SUPABASE_PLAYER_LABELS[column] || column
+    .split("_").map(w => w ? w[0].toUpperCase() + w.slice(1) : "").join(" ");
+}
+function supabaseGetElementId(column) {
+  return "supa-" + column.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + "-value";
+}
+function supabaseRenderRows(columns) {
+  supabaseVisibleColumns = columns;
+  const list = document.getElementById('supabasePlayersList');
+  list.innerHTML = columns.map(c =>
+    `<li style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:0.7rem 1rem;font-size:0.95rem;">
+       <strong>${supabaseGetDisplayName(c)}</strong>
+       <span id="${supabaseGetElementId(c)}" style="float:right;font-weight:600;color:#9be29b;">loading…</span>
+     </li>`).join("");
+}
+function supabaseSetAllFailed(message) {
+  for (const c of supabaseVisibleColumns) {
+    const el = document.getElementById(supabaseGetElementId(c));
+    if (el) el.textContent = "failed to load";
+  }
+  const s = document.getElementById('supabaseLoadStatus');
+  if (s) { s.textContent = message; s.style.color = "#ef4444"; }
+}
+async function loadSupabasePlayers() {
+  const list = document.getElementById('supabasePlayersList');
+  const status = document.getElementById('supabaseLoadStatus');
+  if (!list) return;
+  if (!isAdmin) { list.innerHTML = '<span style="color:#888;">Admin access required.</span>'; return; }
+  if (status) { status.textContent = 'Loading…'; status.style.color = '#888'; }
+  try {
+    if (!supabaseClient) {
+      if (!window.supabase) {
+        await new Promise((res, rej) => {
+          const sc = document.createElement('script');
+          sc.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js";
+          sc.onload = res; sc.onerror = () => rej(new Error("Could not load Supabase library."));
+          document.head.appendChild(sc);
+        });
+      }
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    const { data, error } = await supabaseClient.from("players").select("*").limit(1);
+    if (error) throw error;
+    if (!data || data.length === 0) throw new Error("The players table is empty or blocked by RLS.");
+    const row = data[0];
+    const columns = Object.keys(row).filter(c => !SUPABASE_IGNORE_COLUMNS.includes(c));
+    supabaseRenderRows(columns);
+    for (const c of columns) {
+      const el = document.getElementById(supabaseGetElementId(c));
+      if (!el) continue;
+      const v = row[c];
+      el.textContent = (v === null || v === undefined) ? "—" : v + "$";
+    }
+    if (status) { status.textContent = ""; status.style.color = "#888"; }
+  } catch (e) {
+    console.error("Supabase load error:", e);
+    supabaseSetAllFailed(e.message || "Failed to load player data.");
+  }
+}
+document.getElementById('refreshSupabaseBtn')?.addEventListener('click', loadSupabasePlayers);
+
+// ============================================================
+// LANGUAGE TOGGLE
+// ============================================================
+const translations = {
+  'en': {
+    'SkyDuels': 'SkyDuels','Choose your battle':'Choose your battle',
+    '5v5':'5v5','Standard duel':'Standard duel','7v7':'7v7','Extended clash':'Extended clash',
+    'Chaos Dungeon':'Chaos Dungeon','4+ players, free‑for‑all':'4+ players, free‑for‑all',
+    'Create Room':'Create Room','Join':'Join','Play!':'Play!','Leave':'Leave',
+    'Your turn!':'Your turn!','Waiting for turn...':'Waiting for turn...',
+    'Play Card':'Play Card','Attack':'Attack','Use Skill':'Use Skill','End Turn':'End Turn',
+    'Admin':'Admin','Admin Console':'Admin Console','Create Card':'Create Card',
+    'Store Products':'Store Products','Buy':'Buy','Shop':'Shop'
+  },
+  'zh': {
+    'SkyDuels':'天空決鬥','Choose your battle':'選擇你的戰鬥',
+    '5v5':'5對5','Standard duel':'標準對決','7v7':'7對7','Extended clash':'擴展衝突',
+    'Chaos Dungeon':'混沌地城','4+ players, free‑for‑all':'4人以上，大混戰',
+    'Create Room':'創建房間','Join':'加入','Play!':'開始！','Leave':'離開',
+    'Your turn!':'輪到你！','Waiting for turn...':'等待回合...',
+    'Play Card':'出牌','Attack':'攻擊','Use Skill':'使用技能','End Turn':'結束回合',
+    'Admin':'管理員','Admin Console':'管理控制台','Create Card':'創建卡牌',
+    'Store Products':'商店商品','Buy':'購買','Shop':'商店'
+  }
+};
+let currentLang = 'en';
+document.getElementById('langToggle').addEventListener('click', () => {
+  const newLang = currentLang === 'en' ? 'zh' : 'en';
+  currentLang = newLang;
+  document.getElementById('langToggle').textContent = newLang === 'en' ? '🌏 EN' : '🌏 中文';
+  const t = translations[newLang];
+  document.querySelector('h1').textContent = t['SkyDuels'];
+  document.querySelector('.lobby-section h2').textContent = t['Choose your battle'];
+  document.querySelectorAll('.lobby-card h3').forEach((el, i) => {
+    const modes = ['5v5','7v7','Chaos Dungeon'];
+    el.textContent = t[modes[i]] || modes[i];
+  });
+  document.querySelectorAll('.lobby-card p').forEach((el, i) => {
+    const descs = ['Standard duel','Extended clash','4+ players, free‑for‑all'];
+    el.textContent = t[descs[i]] || descs[i];
+  });
+  document.getElementById('playBtn').textContent = '⚔️ ' + t['Play!'];
+  document.getElementById('createRoomBtn').textContent = t['Create Room'];
+  document.getElementById('joinRoomBtn').textContent = t['Join'];
+  document.getElementById('leaveGameBtn').textContent = t['Leave'];
+  document.getElementById('playCardBtn').textContent = '🃏 ' + t['Play Card'];
+  document.getElementById('attackBtn').textContent = '⚔️ ' + t['Attack'];
+  document.getElementById('useSkillBtn').textContent = '✨ ' + t['Use Skill'];
+  document.getElementById('endTurnBtn').textContent = '🔒 Turn auto-ends';
+  document.getElementById('adminToggle').textContent = '⚙️ ' + t['Admin'];
+  document.querySelector('.admin-panel h3').textContent = '🛠️ ' + t['Admin Console'];
+  document.querySelector('.admin-panel h4:first-of-type').textContent = t['Create Card'];
+  document.querySelector('.admin-panel h4:last-of-type').textContent = t['Store Products'];
+  document.querySelectorAll('.buy-product-btn').forEach(btn => btn.textContent = t['Buy']);
+  document.getElementById('shopToggle').textContent = '🛒 ' + t['Shop'];
+});
+
+// ============================================================
+// INIT
+// ============================================================
+// Load card cache and update UI
+ensureSheetCards().then(() => {
+  updateCardList();
+  populateCardSelects();
+  return loadGlobalDiscount();
+}).then(() => {
+  loadStore();
+  loadShopProducts();
+  debug("💡 Ready. Click 'Play!' to start a match.");
+}).catch(e => debug("⚠️ ensureSheetCards: " + (e && e.message)));
+debug("SkyDuels loaded. Waiting for auth...");
+</script>
+</body>
+</html>
