@@ -969,6 +969,11 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('logoutBtn').style.display = 'inline-block';
     document.querySelector('.lobby-card')?.classList.add('active');
     await loadUserData();
+    // The card cache may have been unavailable before login (DB requires auth).
+    // Reload it now that we're authenticated and refresh all card-dependent UI.
+    await loadCardCache();
+    populateCardSelects();
+    renderPromoCardPicker();
   } else {
     currentUser = null;
     playerStatus.textContent = '🔴 Logged out';
@@ -1044,7 +1049,18 @@ document.getElementById('adminToggle').addEventListener('click', () => {
   if (!isAdmin && !promptAdminPassword()) return;
   adminPanel.classList.toggle('active');
   adminPanel.style.display = adminPanel.classList.contains('active') ? 'block' : 'none';
-  if (adminPanel.classList.contains('active')) { renderAdminSellList(); renderAdminPlayerList(); loadSupabasePlayers(); renderPromoCardPicker(); loadStore(); loadPromoList(); renderDebugState(); }
+  if (adminPanel.classList.contains('active')) {
+    loadCardCache().then(() => {
+      populateCardSelects();
+      renderPromoCardPicker();
+      renderAdminSellList();
+      renderAdminPlayerList();
+      loadSupabasePlayers();
+      loadStore();
+      loadPromoList();
+      renderDebugState();
+    });
+  }
 });
 
 // ============================================================
@@ -3747,19 +3763,29 @@ document.getElementById('langToggle').addEventListener('click', () => {
 // ============================================================
 // INIT
 // ============================================================
-// Load card cache and update UI
-ensureSheetCards().then(() => {
-  updateCardList();
-  populateCardSelects();
-  return loadCardCache();
-}).then(() => {
-  renderPromoCardPicker();
-  return loadGlobalDiscount();
-}).then(() => {
-  loadStore();
-  loadShopProducts();
-  debug("💡 Ready. Click 'Play!' to start a match.");
-}).catch(e => debug("⚠️ ensureSheetCards: " + (e && e.message)));
+// Load card cache and update UI.
+// Ensure the card cache is always loaded (and the dropdown/picker populated)
+// even if the sheet-sync step fails, so selection never silently breaks.
+(async function initUI() {
+  try {
+    await ensureSheetCards();
+  } catch (e) {
+    debug("⚠️ ensureSheetCards failed: " + (e && e.message));
+  }
+  try {
+    updateCardList();
+    await loadCardCache();
+    populateCardSelects();
+    renderPromoCardPicker();
+    await loadGlobalDiscount();
+    loadStore();
+    loadShopProducts();
+    debug(`💡 Ready. ${Object.keys(cardCache || {}).length} card(s) loaded. Click 'Play!' to start a match.`);
+  } catch (e) {
+    debug("⚠️ initUI error: " + (e && e.message));
+    console.error("SkyDuels init error:", e);
+  }
+})();
 debug("SkyDuels loaded. Waiting for auth...");
 </script>
 </body>
