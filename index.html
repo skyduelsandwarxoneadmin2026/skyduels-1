@@ -1044,7 +1044,7 @@ document.getElementById('adminToggle').addEventListener('click', () => {
   if (!isAdmin && !promptAdminPassword()) return;
   adminPanel.classList.toggle('active');
   adminPanel.style.display = adminPanel.classList.contains('active') ? 'block' : 'none';
-  if (adminPanel.classList.contains('active')) { renderAdminSellList(); renderAdminPlayerList(); loadSupabasePlayers(); }
+  if (adminPanel.classList.contains('active')) { renderAdminSellList(); renderAdminPlayerList(); loadSupabasePlayers(); renderPromoCardPicker(); loadStore(); loadPromoList(); renderDebugState(); }
 });
 
 // ============================================================
