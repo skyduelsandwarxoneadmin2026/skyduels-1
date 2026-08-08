@@ -8,7 +8,7 @@ The entire game lives in a single file: **`v1.0.0/index.html`** — no build ste
 
 ## 🎮 Features
 
-- **Real-time multiplayer** via Firebase (anonymous sign-in, no account needed).
+- **Real-time multiplayer** via Firebase (email/password sign-in — **anonymous auth removed**).
 - **AI opponent** — if no human joins within ~5 seconds, a balanced AI player is auto-added so you can always play solo.
 - **Game modes**
   - `5v5` — Standard duel (5 action + 10 backup cap).
@@ -23,7 +23,10 @@ The entire game lives in a single file: **`v1.0.0/index.html`** — no build ste
 - **Shop** — buy single cards, card packs, and blind boxes using **SDC** currency.
 - **🏪 Marketplace** — sell your own cards to other players and browse their listings; **SkyStock** shows each card's resale value (70% of original price).
 - **🎴 Lineup editor** — save a starting Action + Backup lineup that auto-loads each match.
-- **🛠️ Admin console** (password-protected) — create cards, manage store products, and view all players.
+- **🛠️ Admin console** (password-protected) — create cards, manage store products, view all players, run a live debug panel, and issue **Promo Codes**.
+- **🎟️ Promo Codes** — admins create a code that grants a chosen set of cards to any player who redeems it (one-time per player).
+- **🏷️ Per-item discounts** — admins select exactly which store items are discounted (not applied to all items).
+- **🏆 Win & Chaos rewards** — earn SDC for winning (vs AI: 10–50, vs player: 75–150); Chaos Dungeon hands out prizes up to **250 SDC**.
 - **🌏 Language toggle** — switch between **English** and **中文**.
 - **🎁 Gift code** redemption for bonus SDC.
 - **AI-generated card artwork** rendered on the battlefield.
@@ -36,7 +39,7 @@ The entire game lives in a single file: **`v1.0.0/index.html`** — no build ste
 |-------|------------|
 | UI | Plain HTML + CSS (glassmorphism style), no framework |
 | Logic | Vanilla JavaScript (ES modules) |
-| Backend | Firebase — **Anonymous Auth** + **Realtime Database** |
+| Backend | Firebase — **Email/Password Auth** + **Realtime Database** |
 | Loading | `importmap` pulling Firebase 12.x from the gstatic CDN |
 | Data | Card definitions are bundled in `SHEET_CARDS` and synced into `admin/cards` in Firebase |
 
@@ -55,7 +58,7 @@ The entire game lives in a single file: **`v1.0.0/index.html`** — no build ste
      python3 -m http.server 8000
      # then open http://localhost:8000
      ```
-3. Wait for the status badge to show **🔗 Connected**. You are signed in anonymously and start with **150 SDC**.
+3. Wait for the status badge to show **🔗 Connected**. **Register** (email + password) or **Log in** with an existing account, then start with **150 SDC**. Anonymous sign-in has been removed — an account is required to play.
 
 ### Playing with friends
 - Click **⚔️ Play!** to create a public room, or **Create Room** and share the generated room code.
@@ -104,8 +107,13 @@ The game is a single self-contained `index.html`. The CSV files at the project r
    - **Manage Store Products** — add single cards, card packs, or blind-box packs to the Shop with price & quantity.
    - **Sell Action Cards** — list any action card on the Shop at a chosen price.
    - **👥 Players** — see everyone who has ever played, with online status.
+   - **Per-item Discounts** — tick the items you want discounted, set a `%`, then **Apply to Selected** (only the checked items are discounted — never all items).
+   - **🎟️ Promo Codes** — enter a code, tick the **Items to grant** from the card list, then **Create**. Players redeem a code in the lobby (one-time per account).
+   - **🐞 Debug Panel** — live view of current user / room / mode / turn / card cache, plus quick actions (refresh, reload cards, force-win, give +100 SDC).
 
 > The Admin console is **locked during an active battle** so rules can't be changed mid-fight.
+>
+> **Requires authentication:** the card dropdowns and promo item pickers read `admin/cards` from Firebase, which requires a logged-in account. If you open the Admin console before logging in, the card lists will be empty — log in first, then reopen the console.
 
 ---
 
@@ -114,7 +122,7 @@ The game is a single self-contained `index.html`. The CSV files at the project r
 - **Firebase config** and the **admin password** are hard-coded inside `index.html`. Anyone who opens the file can read them.
   - Before any public deployment, move secrets out of the client (or at least lock down **Firebase Realtime Database security rules**) so anonymous users cannot read/write arbitrary data.
   - Treat the admin password as public once the file is shared.
-- **Privacy:** players are authenticated **anonymously**; only a random UID, display name, currency, and presence flag are stored.
+- **Privacy:** players are authenticated with **email/password**; a UID, email, display name, currency, owned cards, and presence flag are stored. Anonymous sign-in has been removed.
 - **Reset Progress** (lobby button) permanently wipes your owned cards and resets currency to 150 SDC.
 
 ---
@@ -124,3 +132,4 @@ The game is a single self-contained `index.html`. The CSV files at the project r
 - Card artwork is AI-generated and loaded by card id; broken images fail silently.
 - The AI is intentionally tuned to be beatable (fixed Lv.1, Common/Rare planes only, sometimes skips attacks).
 - All game state (rooms, players, cards, shop, market listings) lives in the shared Firebase project, so it is global across all players using this build.
+- **Rewards:** winning a match grants SDC — **10–50** vs an AI, **75–150** vs another player. In **Chaos Dungeon**, eliminated players receive a consolation prize (**20–250 SDC**) and the last survivor a grand prize (**100–250 SDC**). Rewards go only to human (non-AI) players and are written to `users/<uid>/currency`.
